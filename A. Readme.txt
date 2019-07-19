@@ -1,0 +1,5 @@
+Code is based on funPES.m and subfunction in "15. Combined Stimulation - Acoustoelectrical neurostimulation"
+
+Implementation of the SONIC model (Lemaire et al.,2018):
+1) SONICtabulate will calculate the look-up tables based on the BLS-model
+2) SONICrun will simulate the modified HH equations

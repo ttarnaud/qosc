@@ -1,0 +1,130 @@
+function SONICtabulate
+ModelN = 1;
+aBLSRange = [16,32,64]*10^(-9); 		% Sonophore radius (m)
+USfreqRange = [0.02, 0.1, 0.5, 1, 2, 3, 4]*10^(6); % Ultrasonic frequency (Hz)
+USPaRange = [0, logspace(log10(100),log10(600000),50)];  % Ultrasonic pressure (Pa)
+fQmRange = @(Qm0) (Qm0-25*10^(-5):1*10^(-5):50*10^(-5)); % Membrane charge (C/m^2) 
+% --------------------------------------------------------------------------------
+ME = ''; futIND = 0;
+try p = gcp;
+catch ME
+end
+if isempty(ME)
+ParallelON = 1; 
+disp('Parallel computing toolbox available - running in gcp');
+q = p.FevalQueue;
+elseif strcmp(ME.identifier,'parallel:cluster:LicenseUnavailable')
+ParallelON = 0;
+disp('Parallel computing toolbox not available - running sequentially');
+end
+for iModel = 1:length(ModelN)
+MODEL = ModelN(iModel);
+Cm0 = 0.01; 				% Rest capacitance (F/m^2);   
+switch MODEL
+   case 1, MODELstr='RS'; Vm0 = -71.9;  % mV
+   case 2, MODELstr='FS'; Vm0 = -71.4;
+   case 3, MODELstr='LTS'; Vm0 = -54; 
+   case 4, MODELstr='TC'; Vm0 = -63.4;          
+   case 5, MODELstr='RE'; Vm0 = -89.5;
+   case 6, MODELstr='RS_FVX'; Vm0 = -70.4;
+   case 7, MODELstr='FS_FVX'; Vm0 = -70; 
+   case 8, MODELstr='LTS_CAX'; Vm0 = -84.6; 
+   case 9, MODELstr='STN'; Vm0=-58;       
+   case 10, MODELstr='Th-RT'; Vm0=-65; 
+   case 11, MODELstr='GPi'; Vm0 = -65;      
+   case 12, MODELstr='GPe'; Vm0 = -65;
+   case 13, MODELstr='Str-MSN'; Vm0=-87;
+   case 14, MODELstr='HH'; Vm0 = -70;
+end
+QmRange = fQmRange(10^(-3)*Vm0*Cm0);
+SONICInitM = zeros(numel(QmRange),numel(USPaRange),numel(USfreqRange),numel(aBLSRange));
+SONICtable = struct('Zeff',SONICInitM,'Veff',SONICInitM,'ngend',SONICInitM,'Cmeff',SONICInitM);
+ProgressIncr1 = 0; ProgressIncr2 = 0; reverseStr1 = ''; reverseStr2 = '';
+if ParallelON == 1
+for iaBLS = (1:length(aBLSRange))
+aBLS = aBLSRange(iaBLS);
+    for iUSfreq = (1:length(USfreqRange))
+    USfreq = USfreqRange(iUSfreq);
+        for iUSPa = (1:length(USPaRange))
+        USPa = USPaRange(iUSPa);			
+            for iQm = (1:length(QmRange)) 
+            ProgressIncr1 = ProgressIncr1+1;
+            Progress = 100*ProgressIncr1/numel(SONICInitM);
+            
+            msg = sprintf('Submitting futures to gcp. Progress: %3.5f', Progress);
+            fprintf([reverseStr1, msg]);
+            reverseStr1 = repmat(sprintf('\b'), 1, length(msg)); 
+                                    
+            Qm = QmRange(iQm);
+            FutureResults(iQm,iUSPa,iUSfreq,iaBLS) = parfeval(p,@SONICcalc,6,MODEL,Qm,USPa,USfreq,aBLS); %#ok<AGROW>             
+            end
+        end
+    end
+end
+end
+fprintf('\n');
+for iaBLS = (1:length(aBLSRange))
+    for iUSfreq = (1:length(USfreqRange))
+        for iUSPa = (1:length(USPaRange))	
+            for iQm = (1:length(QmRange))           
+            ProgressIncr2 = ProgressIncr2+1;
+            Progress = 100*ProgressIncr2/numel(SONICInitM);
+                      
+            msg = sprintf('Simulating and fetching results. Progress: %3.5f', Progress); 
+            fprintf([reverseStr2, msg]);
+            reverseStr2 = repmat(sprintf('\b'), 1, length(msg)); 
+                      
+            if ParallelON == 1
+            TIMEOUT = 60*60*2; % (s)
+            [futIND,Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = fetchNext(FutureResults,TIMEOUT);
+            if isempty(futIND)
+               fprintf('\n');
+               disp('TIME OUT ERROR. Result could not be fetched in time');
+               disp('Running futures');
+               disp(q.RunningFutures);
+               disp('Input arguments');
+               for i = 1:length(q.RunningFutures)
+               InputArgs(i,:) = q.RunningFutures(i).InputArguments; %#ok<AGROW>
+               end
+               disp(InputArgs);
+               error('---------------------------');               
+            end
+            else
+            aBLS = aBLSRange(iaBLS);
+            USfreq = USfreqRange(iUSfreq);
+            USPa = USPaRange(iUSPa);                
+            Qm = QmRange(iQm);
+            futIND = futIND+1;
+            [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS);
+            end
+            SONICtable.Zeff(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = Zeff;
+            SONICtable.Veff(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = Veff;
+            SONICtable.ngend(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = ngend;
+            SONICtable.Cmeff(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = Cmeff;           
+
+            alphaFNs = fieldnames(a_i_eff); 
+            alphapbetaFNs = fieldnames(apb_i_eff);
+
+                for i = 1:numel(alphaFNs)
+                if ~isfield(SONICtable,['a_' alphaFNs{i}]), SONICtable.(['a_' alphaFNs{i}]) = SONICInitM; end 
+                SONICtable.(['a_' alphaFNs{i}])(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = a_i_eff.(alphaFNs{i});
+                end
+                for i = 1:numel(alphapbetaFNs)
+                if ~isfield(SONICtable,['apb_' alphapbetaFNs{i}]), SONICtable.(['apb_' alphapbetaFNs{i}]) = SONICInitM; end 
+                SONICtable.(['apb_' alphapbetaFNs{i}])(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = apb_i_eff.(alphapbetaFNs{i});
+                end		
+            end
+        end
+    end
+end
+
+SONICtable.QmRange = QmRange;
+SONICtable.aBLSRange = aBLSRange;
+SONICtable.USfreqRange = USfreqRange; 
+SONICtable.USPaRange = USPaRange; 
+
+saveStr = ['SONIC-' MODELstr '.mat'];
+save(saveStr,'SONICtable');
+
+end
+end
