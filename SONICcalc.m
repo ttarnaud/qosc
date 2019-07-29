@@ -728,7 +728,7 @@ end
 
 % 4. Solver
 global reverseStr; 
-global temp; global tempi;
+global temp; global tempi; global maxlags;
 if DISPLAY, disp('Solver started'); end
 if SpeedUp == 1 || SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6
     temp = cell(ceil(2/USfreq/dtUS),3);               % Estimated preallocation for speed
@@ -793,14 +793,16 @@ end
 % Because we have to choose, the stiff solver (ode23t) is better, because
 % simulations for large displacements are the bottlenecks (are more time
 % intensive than small displacements)
-[t,W,~,SONICPer,~] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+[t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+SONICPer = maxlags;
 else
 %BLS = @(t,Z,dZ,na,Ca) BLS2Q(DISPLAY,tBLS,t,Z,dZ,na,Ca,R,rhol,PecQ,Qm,Pin,Pm,Po,PaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR);
 if SpeedUp == 1 || SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6 
 EventFcn = @(t,W) EventFcn2(t,W(1),W(2),W(3),W(4:3+Nout),USfreq,dtUS,CORRTres,PerCheckMax);
 OdeOpts = odeset('MaxStep',dtUS,'Events',EventFcn);
 end
-[t,W,~,SONICPer,~] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
+[t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
+SONICPer = maxlags;
 end
 if t(end) == tBLS(end)
 disp(['Note: no periodicity is found with (CORRtres,Tmax,Qm,USPa,USfreq,aBLS): ' num2str(CORRTres) ',' num2str(Tmax) ',' num2str(Qm) ',' num2str(USPa) ',' num2str(USfreq) ',' num2str(aBLS)]);
@@ -820,7 +822,6 @@ end
 %    crash the program!)
 % 2. length Dt = t(end)-t(firstIn) (approx<)= 1/freq
 
-%%%% !! Define SONICPer;
 firstIn = find((t(end)-t)<SONICPer,1);
 tPeriod = [(t(end)-SONICPer), t(firstIn:end)'];
 Wperiod = vertcat(W(end,:),W(firstIn:end,:));

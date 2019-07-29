@@ -1,6 +1,6 @@
 function [value,isterminal,direction] = EventFcn2(t,Z,dZ,na,Ca,freq,dt,CORRTres,PerCheckMax) %#ok<INUSL>
 isterminal = 1; direction = 1; value = -1;
-global temp; global tempi;
+global temp; global tempi; global maxlags;
 if ~tempi||(t>=(temp{tempi,1}+dt))      % Save time by immediately sampling with dt  (however less accurate)
     tempi = tempi+1;
     temp(tempi,:) = {t, Z, na};

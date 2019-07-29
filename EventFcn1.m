@@ -1,6 +1,6 @@
 function [value,isterminal,direction] = EventFcn1(t,Z,dZ,na,freq,dt,CORRTres,PerCheckMax) %#ok<INUSL>
 isterminal = 1; direction = 1; value = -1;
-global temp; global tempi; 
+global temp; global tempi; global maxlags;
 if ~tempi||(t>=(temp{tempi,1}+dt))    % Save time by immediately sampling with dt (however less accurate)
     tempi = tempi+1;
     temp(tempi,:) = {t, Z, na};
@@ -33,7 +33,7 @@ acorrna2 = acorrna(lags>=(1/freq-dt)&lags<=(PerCheckMax/(2*freq)+dt));
 maxacorrna = acorrna2(Imax); maxlags = lags2(Imax);
 
 if maxacorrZ>=CORRTres&&maxacorrna>=CORRTres
-value = maxlags;
+value = 1;
 end
 end
 end
