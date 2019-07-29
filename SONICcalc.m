@@ -40,7 +40,16 @@ coder.extrinsic('nakeinterp1');
 % SpeedUp -> NICE-model, UpSpeed -> BLS-model
 SpeedUp = 5;
 UpSpeed = 4;
-CORRTres = 0.9;     % Threshold for normalized unbiased autocorrelation in
+CORRTres = 0.99;     % Threshold for normalized unbiased autocorrelation in
+PerCheckMax = 10;    % At certain unpredictable parameters-values, presumed due to non-linearities, the BLS equations
+                     % will never reach a periodic regime with f=USfreq. In this case, the solution can be periodic with a harmonic undertone
+                     % of f=USfreq (e.g. with f2=USfreq/2) or never be truely periodic (e.g. some rough periodicity with f=USfreq can be observed, but each
+                     % period has a different amplitude). 
+                     % PerCheckMax is the maximal number of considered
+                     % periods, in the autocorrelation (PerCheckMax should
+                     % be >= 2). EventFcn will terminate BLS1Q, if there is periodicity with T in [1/USfreq,(PerCheckMax/2)*1/USfreq]
+                     % OR f in [2*USfreq/PerCheckMax,USfreq]. 
+NonPerEffP = 10; % If (Z, na) is never fully periodic, effective parameters are calculated by integration over [t(end)-NonPerEffP/USfreq,t(end)]
 % periodicity analysis 
 % For long simulation times Tsim, pulse durations PD and short minimum step times
 % dt, the default program (SpeedUp=0) is rather slow (f.i.
@@ -794,8 +803,9 @@ end
 [t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
 end
 if t(end) == tBLS(end)
-error(['SONIC stopped because no periodicity is found with (CORRtres,Tmax,Qm,USPa,USfreq,aBLS): ' num2str(CORRTres) ',' num2str(Tmax) ',' num2str(Qm) ',' num2str(USPa) ',' num2str(USfreq) ',' num2str(aBLS)]);
-else
+disp(['Note: no periodicity is found with (CORRtres,Tmax,Qm,USPa,USfreq,aBLS): ' num2str(CORRTres) ',' num2str(Tmax) ',' num2str(Qm) ',' num2str(USPa) ',' num2str(USfreq) ',' num2str(aBLS)]);
+SONICPer = NonPerEffP/USfreq;
+end
 if DISPLAY==2
 disp(' ');
 disp(['Periodicity found in solution with autocorrelation >' num2str(CORRTres)]);
@@ -809,8 +819,10 @@ end
 %    over an integer times the period (otherwise discontinuities will
 %    crash the program!)
 % 2. length Dt = t(end)-t(firstIn) (approx<)= 1/freq
-firstIn = find((t(end)-t)<(1/USfreq),1);
-tPeriod = [(t(end)-1/USfreq), t(firstIn:end)'];
+
+%%%% !! Define SONICPer;
+firstIn = find((t(end)-t)<SONICPer,1);
+tPeriod = [(t(end)-SONICPer), t(firstIn:end)'];
 Wperiod = vertcat(W(end,:),W(firstIn:end,:));
 
 % Calculating effective parameters 
@@ -823,7 +835,6 @@ Zeff = calcEff(@(X) X);             % (m)
 Veff = 1000*calcEff(@(X) Qm./Cm(X));   % (mV)
 Cmeff = calcEff(Cm);        % (F/m^2)
 ngend = Wperiod(end,3);
-end
 
 % ------------------------------Rate constants-----------------------------
 a_i_eff = struct; apb_i_eff = struct;
