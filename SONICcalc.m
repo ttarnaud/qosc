@@ -782,7 +782,7 @@ W0 = [X(end,1:2), X(end,4:4+Nout)]'; % W = [Z dZ na Ca]
 if DiffusionApproximation
 %BLS = @(t,Z,dZ,na) BLS1Q(DISPLAY,tBLS,t,Z,dZ,na,R,rhol,PecQ,Qm,Pin,Pm,Po,PaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi); %#ok<*UNRCH>
 if SpeedUp == 1 || SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6
-EventFcn = @(t,W) EventFcn1(t,W(1),W(2),W(3),USfreq,dtUS,CORRTres);
+EventFcn = @(t,W) EventFcn1(t,W(1),W(2),W(3),USfreq,dtUS,CORRTres,PerCheckMax);
 OdeOpts = odeset('MaxStep',dtUS,'Events',EventFcn,'AbsTol',[1e-13;1e-9;1e-24],'RelTol',1e-4);
 %OdeOpts = odeset('MaxStep',dtUS,'Events',EventFcn,'AbsTol',1e-3,'RelTol',1e-1);
 end
@@ -793,14 +793,14 @@ end
 % Because we have to choose, the stiff solver (ode23t) is better, because
 % simulations for large displacements are the bottlenecks (are more time
 % intensive than small displacements)
-[t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+[t,W,~,SONICPer,~] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
 else
 %BLS = @(t,Z,dZ,na,Ca) BLS2Q(DISPLAY,tBLS,t,Z,dZ,na,Ca,R,rhol,PecQ,Qm,Pin,Pm,Po,PaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR);
 if SpeedUp == 1 || SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6 
-EventFcn = @(t,W) EventFcn2(t,W(1),W(2),W(3),W(4:3+Nout),USfreq,dtUS,CORRTres);
+EventFcn = @(t,W) EventFcn2(t,W(1),W(2),W(3),W(4:3+Nout),USfreq,dtUS,CORRTres,PerCheckMax);
 OdeOpts = odeset('MaxStep',dtUS,'Events',EventFcn);
 end
-[t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
+[t,W,~,SONICPer,~] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
 end
 if t(end) == tBLS(end)
 disp(['Note: no periodicity is found with (CORRtres,Tmax,Qm,USPa,USfreq,aBLS): ' num2str(CORRTres) ',' num2str(Tmax) ',' num2str(Qm) ',' num2str(USPa) ',' num2str(USfreq) ',' num2str(aBLS)]);
