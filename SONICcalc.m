@@ -41,7 +41,7 @@ coder.extrinsic('nakeinterp1');
 SpeedUp = 5;
 UpSpeed = 4;
 CORRTres = 0.99;     % Threshold for normalized unbiased autocorrelation in
-PerCheckMax = 10;    % At certain unpredictable parameters-values, presumed due to non-linearities, the BLS equations
+PerCheckMax = 4;    % At certain unpredictable parameters-values, presumed due to non-linearities, the BLS equations
                      % will never reach a periodic regime with f=USfreq. In this case, the solution can be periodic with a harmonic undertone
                      % of f=USfreq (e.g. with f2=USfreq/2) or never be truely periodic (e.g. some rough periodicity with f=USfreq can be observed, but each
                      % period has a different amplitude). 
@@ -649,7 +649,10 @@ dZ0 = 0;
 Pin0 = Po;
 na0 = (Pin0*Va(Z0))/(Rg*Temp);  % Mole air in BLS
 Ca0 = Ca.*ones(1,Nout);         % External molar air concentration (mole/m^3)
-Tmax = 500*10^(-6);             % Max runtime before which periodicity has to be established (s)
+Tmax = 50/USfreq;               % Max runtime before which periodicity has to be established (s) 
+if Tmax <= PerCheckMax/USfreq || Tmax <= NonPerEffP/USfreq
+    disp('Warning: insufficient number of periods in Tmax to check for periodicity or to calculate effective parameters over NonPerEffP');
+end
 dtUS = 0.025/USfreq;            % Discretisation time (s)
 %dtUS = 0.1/USfreq;
 %dtUS = 0.005/USfreq;

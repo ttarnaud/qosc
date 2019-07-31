@@ -25,7 +25,7 @@ natemp = interp1(TimeLine,tempor(:,3),SampleT,'spline','extrap');
 lags = lags*dt;
 acorrZ = acorrZ/acorrZ(ceil(length(acorrZ)/2));  % Normalize autocorrelation to 1
 acorrna = acorrna/acorrna(ceil(length(acorrna)/2));
-lags2 = lags(lags>=(1/freq-dt)&lags<=(PerCheckMax/(2*freq)+dt));
+lags2 = lags(lags>=(1/freq-dt)&lags<=(PerCheckMax/(2*freq)+dt));   % +- dt for the case PerCheckMax == 2
 acorrZ2 = acorrZ(lags>=(1/freq-dt)&lags<=(PerCheckMax/(2*freq)+dt));
 acorrna2 = acorrna(lags>=(1/freq-dt)&lags<=(PerCheckMax/(2*freq)+dt));
 
