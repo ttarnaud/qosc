@@ -796,7 +796,22 @@ end
 % Because we have to choose, the stiff solver (ode23t) is better, because
 % simulations for large displacements are the bottlenecks (are more time
 % intensive than small displacements)
-[t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+ME = ''; MEb = '';          
+try [t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+catch ME
+end
+if ~isempty(ME)
+if strcmp(ME.identifier,'FunPm:UNPHYS')     % Unphysical solution might be caused by instability in the ode23t solver
+try [t,W] = ode113(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+catch MEb   % We retry with ode113
+end
+if ~isempty(MEb)
+error(MEb.message);
+end
+else
+error(ME.message);
+end
+end
 SONICPer = maxlags;
 else
 %BLS = @(t,Z,dZ,na,Ca) BLS2Q(DISPLAY,tBLS,t,Z,dZ,na,Ca,R,rhol,PecQ,Qm,Pin,Pm,Po,PaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR);
