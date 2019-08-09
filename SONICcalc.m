@@ -849,7 +849,7 @@ Wperiod = vertcat(W(end,:),W(firstIn:end,:));
 % So actually trapz is more accurate than integral(nakeinterp1(...)), because in the latter twice higher order errors
 if DISPLAY == 2, disp('Calculating effective parameters'); end
 calcEff = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Wperiod(:,1)));
-calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Qm./Cm(Wperiod(:,1))));
+calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*Qm./Cm(Wperiod(:,1))));
 Zeff = calcEff(@(X) X);             % (m)
 Veff = 1000*calcEff(@(X) Qm./Cm(X));   % (mV)
 Cmeff = calcEff(Cm);        % (F/m^2)
