@@ -1,8 +1,8 @@
 MODEL = 1;
 switch MODEL
-    case 1, modelStr = 'RS';
-    case 2, modelStr = 'FS';
-    case 3, modelStr = 'LTS';     
+    case 1, modelStr = 'RS'; modelName = 'regular spiking';
+    case 2, modelStr = 'FS'; modelName = 'fast spiking';
+    case 3, modelStr = 'LTS'; modelName = 'low threshold spiking';
 end
 modelStr = ['SONIC-' modelStr '.mat'];
 l = load(modelStr,'SONICtable');
@@ -18,11 +18,11 @@ load('redCmap.mat');
 greenCmap = redCmap; greenCmap(:,[2 1]) = greenCmap(:,[1 2]);
 blueCmap = redCmap; blueCmap(:,[3 1]) = blueCmap(:,[1 3]);
 
-SONICfields = {'Zeff','Veff','Cmeff','a_m','apb_m','a_n','apb_n','a_h','apb_h','a_p','apb_h','ngend'};
+SONICfields = {'Zeff','Veff','Cmeff','a_m','apb_m','a_n','apb_n','a_h','apb_h','a_p','apb_p','ngend'};
 plotFields = {'Zeff [nm]','Veff [mV]','Cmeff [\muF/cm^2]','a_m [1/ms]','b_m [1/ms]','a_n [1/ms]','b_n [1/ms]','a_h [1/ms]','b_h [1/ms]','a_p [1/ms]','b_p [1/ms]','ngend [mole]'};
 UnitsScale = [10^9,1,100,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,1];
 
-figure;
+fig = figure('position',[1 41 1920 963]);
 set(gcf,'color','w');
 % 1. Dependence on (Q,USPa)   (Freq=500 kHz, a = 32 nm)
 for j = 1:length(SONICfields)
@@ -98,9 +98,9 @@ gc = colorbar(green(1),'location','northoutside');
 set(rc,'TickLabels',10^(-3)*Pa(end)*rc.Ticks);
 set(bc,'TickLabels',10^(9)*aBLS(end)*bc.Ticks);
 set(gc,'TickLabels',10^(-3)*Freq(end)*gc.Ticks);
-set(rc,'position',get(rc,'position')+[0 0.02 0 0]);
-set(bc,'position',get(bc,'position')+[0 0.02 0 0]);
-set(gc,'position',get(gc,'position')+[0 0.02 0 0]);
+set(rc,'position',get(rc,'position')+[0 0.04 0 0]);
+set(bc,'position',get(bc,'position')+[0 0.04 0 0]);
+set(gc,'position',get(gc,'position')+[0 0.04 0 0]);
 ylabel(rc,'Pressure [kPa]'); ylabel(gc,'Frequency [kHz]'); ylabel(bc,'BLS diameters [nm]'); 
-
-
+axes = get(fig,'children'); tt = title(axes(25),['Effective parameters for ' modelName ' neuron']);
+set(tt,'position',get(tt,'position')+[0 5 0],'fontsize',20);
