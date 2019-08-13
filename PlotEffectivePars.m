@@ -18,9 +18,27 @@ load('redCmap.mat');
 greenCmap = redCmap; greenCmap(:,[2 1]) = greenCmap(:,[1 2]);
 blueCmap = redCmap; blueCmap(:,[3 1]) = blueCmap(:,[1 3]);
 
-SONICfields = {'Zeff','Veff','Cmeff','a_m','apb_m','a_n','apb_n','a_h','apb_h','a_p','apb_p','ngend'};
-plotFields = {'Zeff [nm]','Veff [mV]','Cmeff [\muF/cm^2]','a_m [1/ms]','b_m [1/ms]','a_n [1/ms]','b_n [1/ms]','a_h [1/ms]','b_h [1/ms]','a_p [1/ms]','b_p [1/ms]','ngend [mole]'};
-UnitsScale = [10^9,1,100,0.001,0.001,0.001,0.001,0.001,0.001,0.001,0.001,1];
+SONICfields = fieldnames(SONICtable);
+for i = length(SONICfields):-1:1
+if contains(SONICfields{i},'Range')
+SONICfields(i) = [];
+end
+end
+plotFields = cell(1,length(SONICfields)); UnitsScale = zeros(1,length(SONICfields));
+for i = 1:length(SONICfields)
+   switch SONICfields{i}
+       case 'Zeff', plotFields{i} = 'Zeff [nm]'; UnitsScale(i) = 10^9;
+       case 'Veff', plotFields{i} = 'Veff [mV]'; UnitsScale(i) = 1;
+       case 'Cmeff', plotFields{i} = 'Cmeff [\muF/cm^2]'; UnitsScale(i) = 100;
+       case 'ngend', plotFields{i} = 'ngend [mole]';UnitsScale(i) = 1;
+       otherwise
+           if contains(SONICfields{i},'a_')
+               plotFields{i} = [SONICfields{i} '[1/ms]']; UnitsScale(i) = 0.001;
+           elseif contains(SONICfields{i},'apb_')
+               plotFields{i} =['b_' SONICfields{i}(5:end) '[1/ms]']; UnitsScale(i) = 0.001;
+           end
+   end   
+end    
 
 fig = figure('position',[1 41 1920 963]);
 set(gcf,'color','w');
