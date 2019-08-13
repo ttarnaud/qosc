@@ -58,7 +58,6 @@ end
 % Discretisation parameters
 dt = 50e-6;            % Discretisation time (s)
 atol = 1e-6; rtol = 1e-3; % absolute and relative VSVO-tolerances
-Tsim = 3;               % Simulation time (s)
 
 tic;
 % 1. Parameters
@@ -285,7 +284,7 @@ f4Cmeff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange
 f4ngend = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,ngend4D,Qm,USPa,USfreq,aBLS,'linear');
 
 f3Veff = @(Qm,USPa,USfreq) f4Veff(Qm,USPa,USfreq,a); 
-f3Zeff = @(Qm,USPa,USfreq) f4Zeff(Qm,USPa,USfreq,a);
+f3Zeff = @(Qm,USPa,USfreq) f4Zeff(Qm,USPa,USfreq,a); %#ok<*NASGU>
 f3Cmeff = @(Qm,USPa,USfreq) f4Cmeff(Qm,USPa,USfreq,a);
 f3ngend = @(Qm,USPa,USfreq) f4ngend(Qm,USPa,USfreq,a);
 
@@ -294,6 +293,27 @@ for i = 1:length(SONICrates)
 f4rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,rt.(SONICrates{i}),Qm,USPa,USfreq,aBLS,'linear');   
 f3rt.(SONICrates{i}) = @(Qm,USPa,USfreq) f4rt.(SONICrates{i})(Qm,USPa,USfreq,a); 
 end
+
+
+VecVeff0 = zeros(1,length(QmRange)); VecVeffPa = zeros(1,length(QmRange));
+Vecrt0 = struct; VecrtPa = struct; f1rt0 = struct; f1rtPa = struct;
+for i = 1:length(QmRange)
+VecVeff0(i) = f3Veff(QmRange(i),0,USfreq);
+VecVeffPa(i) = f3Veff(QmRange(i),USPa,USfreq);
+end
+for j = 1:length(SONICrates)
+Vecrt0.(SONICrates{j}) = zeros(1,length(QmRange));
+VecrtPa.(SONICrates{j}) = zeros(1,length(QmRange));
+for i = 1:length(QmRange)
+Vecrt0.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),0,USfreq);
+VecrtPa.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),USPa,USfreq);
+end
+f1rt0.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',Vecrt0.(SONICrates{j}),Q);
+f1rtPa.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',VecrtPa.(SONICrates{j}),Q);
+end
+f1Veff0 = @(Q) nakeinterp1(QmRange',VecVeff0,Q);
+f1VeffPa = @(Q) nakeinterp1(QmRange',VecVeffPa,Q);
+
 
 fVCa = @(cCai) 10^(3)*((Rg*Temp)/(2*Far))*log(cCae./cCai); % Nernst equation for Ca-potential [mV] (if not assumed constant)
 
@@ -355,14 +375,14 @@ OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
 % ---------------REGULAR OR FAST SPIKING NEURONS---------------------------
 %--------------------------------------------------------------------------
 if MODEL == 1 || MODEL == 2 || MODEL == 6 || MODEL == 7
-[t,U] = ode113(@(t,U) SONIC_RSFS(ESi,USPaT,USfreq,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
-    Gna,Vna,Gk,Vk,Gm,Gl,Vl,f3Veff,f3rt,SONICgates),tNICE,Y0,OdeOpts);
+[t,U] = ode113(@(t,U) SONIC_RSFS(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
+    Gna,Vna,Gk,Vk,Gm,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------LOW THRESHOLD SPIKING NEURONS--------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 3 || MODEL == 8
 [t,U] = ode113(@(t,U) SONIC_LTS(ESi,USPaT,USfreq,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
-    Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f3Veff,f3rt),tNICE,Y0,OdeOpts);
+    Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------THALAMOCORTICAL NEURONS--------------------------------
 %--------------------------------------------------------------------------
@@ -380,13 +400,12 @@ elseif MODEL == 5
 % -------------------------------------------------------------------------
 elseif MODEL == 9
 if Charges
-OdeOpts=odeset('MaxStep',dt);
 [t,U] = ode113(@(t,U) SimplNICESTNLUcharges(ESi,DISPLAY,tNICE,t,...
     U(1),U(2),U(3),U(4),U(5),U(6),U(7),U(8),U(9),U(10),U(11),U(12),U(13),...
     U(14),U(15),U(16),U(17),U(18),U(19),U(20),...
     CmR,Gna,Vna,Gk,Vk,Gl,Vl,GT,fVCa,GCa,GA,GL,minf,ninf,...
     pinf,hinf,qinf,rinf,ainf,binf,cinf,d1inf,d2inf,taum,taun,taup,tauh,tauq,...
-    taur,taua,taub,tauc,taud1,taud2,Far,tauCa,VLIMs,kcCaiLIMs),tNICE,U0,OdeOpts);
+    taur,taua,taub,tauc,taud1,taud2,Far,tauCa,VLIMs,kcCaiLIMs),tNICE,U0,OdeOpts); %#ok<*UNRCH>
 else
 OdeOpts=odeset('MaxStep',dt,'AbsTol',1e-7,'RelTol',1e-4);
 [t,U] = ode113(@(t,U) SimplNICESTNLU(ESi,DISPLAY,tNICE,t,...
