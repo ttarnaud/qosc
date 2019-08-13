@@ -1,4 +1,4 @@
-function Out = SONIC_LTS(ESi,USPaT,DISPLAY,tNICE,t,Q,m,n,h,p,s,u,Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
+function Out = SONIC_LTS(ESi,USPaT,DISPLAY,tNICE,t,Q,h,m,n,p,s,u,Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
 if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>

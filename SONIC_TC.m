@@ -1,5 +1,5 @@
-function Out = SONIC_TC(ESi,USPaT,DISPLAY,tNICE,t,Q,m,n,h,s,u,w,wLock,hProtein,cCai,...
-    Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,GKL,Gh,ginc,Vh,k1,k2,k3,k4,Far,deffCa,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa)
+function Out = SONIC_TC(ESi,USPaT,DISPLAY,tNICE,t,Q,h,m,n,s,u,w,wLock,hProtein,cCai,...
+    Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,GKL,Gh,ginc,Vh,k1,k2,k3,k4,Far,deffCa,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
 if DISPLAY == 2
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>
@@ -19,13 +19,19 @@ if USPaT(t) == 0
 Veff = f1Veff0(Q);
 Out = [ESi(t)-10^(-3)*(Gna*m^3*h*(Veff-Vna)+Gk*n^4*(Veff-Vk)+GT*s^2*u*(Veff-fVCa(cCai))+Gl*(Veff-Vl)+...
     GKL*(Veff-Vk)+Gh*(w+ginc*wLock)*(Veff-Vh));
-am(V)-(ampbm(V))*m;
-an(V)-(anpbn(V))*n;
-ah(V)-(ahpbh(V))*h;
-(sinf(V)-s)/taus(V);
-(uinf(V)-u)/tauu(V);
-(winf(V)*(1-wLock)-w)/tauw(V);
+cellfun(@(X) f1rt0.(['a_' X])(Q)-f1rt0.(['apb_' X])(Q)*rate.(X),SONICgates);
+(winf(Veff)*(1-wLock)-w)/tauw(Veff);
 k3*(w*hProtein)-k4*wLock;
 k1*((1-hProtein)*cCai^2)-k2*hProtein;
--(10^(-3)*GT*s^2*u*(V-fVCa(cCai)))/(2*Far*deffCa)-cCai/tauCa];
+-(10^(-3)*GT*s^2*u*(Veff-fVCa(cCai)))/(2*Far*deffCa)-cCai/tauCa];
+else
+Veff = f1VeffPa(Q);
+Out = [ESi(t)-10^(-3)*(Gna*m^3*h*(Veff-Vna)+Gk*n^4*(Veff-Vk)+GT*s^2*u*(Veff-fVCa(cCai))+Gl*(Veff-Vl)+...
+    GKL*(Veff-Vk)+Gh*(w+ginc*wLock)*(Veff-Vh));
+cellfun(@(X) f1rtPa.(['a_' X])(Q)-f1rtPa.(['apb_' X])(Q)*rate.(X),SONICgates);
+(winf(Veff)*(1-wLock)-w)/tauw(Veff);
+k3*(w*hProtein)-k4*wLock;
+k1*((1-hProtein)*cCai^2)-k2*hProtein;
+-(10^(-3)*GT*s^2*u*(Veff-fVCa(cCai)))/(2*Far*deffCa)-cCai/tauCa];
+end
 end

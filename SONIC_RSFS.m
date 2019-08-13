@@ -1,4 +1,4 @@
-function Out = SONIC_RSFS(ESi,USPaT,DISPLAY,tNICE,t,Q,m,n,h,p,Gna,Vna,Gk,Vk,Gm,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
+function Out = SONIC_RSFS(ESi,USPaT,DISPLAY,tNICE,t,Q,h,m,n,p,Gna,Vna,Gk,Vk,Gm,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
 if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>

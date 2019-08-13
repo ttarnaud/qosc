@@ -59,7 +59,6 @@ Cm0 = 0.01;				% Rest capacitance (F/m^2)
 a=32*10^(-9);			% radius leaflet boundary (m)
 c = 1515;				% Speed of sound surrounding medium (m/s)
 rhol = 1028;			% Density surrounding medium (kg/m^3)
-USPa = sqrt(2*rhol*c*USipa);
 Rg = 8.314;             % Universal gas constant (J/(K*mol))
 Far = 96485.3329;       % Faraday constant (C/mol) 
 %Temp = 309.15; 		    % Surrounding medium temperature (K)	
@@ -265,7 +264,7 @@ Veff4D = SONICtable.Veff; Zeff4D = SONICtable.Zeff; Cmeff4D = SONICtable.Cmeff; 
 
 % rate 4D sonic tables
 SONICfields = fieldnames(SONICtable);
-SONICrates = SONICfields(cellfun(@(X) contains(X,'a_')|contains(X,'apb_'),SONICfields));
+SONICrates = sort(SONICfields(cellfun(@(X) contains(X,'a_')|contains(X,'apb_'),SONICfields)));
 SONICgates = cellfun(@(X) X(3:end),SONICrates(cellfun(@(X) contains(X,'a_'),SONICrates)),'UniformOutput',0); 
 rt = struct;
 for i = 1:length(SONICrates)
@@ -282,32 +281,12 @@ f3Cmeff = @(Qm,USPa,USfreq) f4Cmeff(Qm,USPa,USfreq,a);
 f3ngend = @(Qm,USPa,USfreq) f4ngend(Qm,USPa,USfreq,a);
 
 f4rt = struct; f3rt = struct;
+VecVeff0 = zeros(1,length(QmRange)); VecVeffPa = zeros(1,length(QmRange));
+Vecrt0 = struct; VecrtPa = struct; f1rt0 = struct; f1rtPa = struct;
 for i = 1:length(SONICrates)
 f4rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,rt.(SONICrates{i}),Qm,USPa,USfreq,aBLS,'linear');   
 f3rt.(SONICrates{i}) = @(Qm,USPa,USfreq) f4rt.(SONICrates{i})(Qm,USPa,USfreq,a); 
 end
-
-
-VecVeff0 = zeros(1,length(QmRange)); VecVeffPa = zeros(1,length(QmRange));
-Vecrt0 = struct; VecrtPa = struct; f1rt0 = struct; f1rtPa = struct;
-for i = 1:length(QmRange)
-VecVeff0(i) = f3Veff(QmRange(i),0,USfreq);
-VecVeffPa(i) = f3Veff(QmRange(i),USPa,USfreq);
-end
-for j = 1:length(SONICrates)
-Vecrt0.(SONICrates{j}) = zeros(1,length(QmRange));
-VecrtPa.(SONICrates{j}) = zeros(1,length(QmRange));
-for i = 1:length(QmRange)
-Vecrt0.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),0,USfreq);
-VecrtPa.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),USPa,USfreq);
-end
-f1rt0.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',Vecrt0.(SONICrates{j}),Q);
-f1rtPa.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',VecrtPa.(SONICrates{j}),Q);
-end
-f1Veff0 = @(Q) nakeinterp1(QmRange',VecVeff0,Q);
-f1VeffPa = @(Q) nakeinterp1(QmRange',VecVeffPa,Q);
-
-
 fVCa = @(cCai) 10^(3)*((Rg*Temp)/(2*Far))*log(cCae./cCai); % Nernst equation for Ca-potential [mV] (if not assumed constant)
 
 % 3. Initial conditions and timespan
@@ -360,10 +339,30 @@ end
 while ~SearchMode || ~PrecisionCheck 
     reverseStr = '';
 if MODE == 1
-USPaT = @(t) sqrt(2*rhol*c*IIpa)*USstep(t);
+USPa = sqrt(2*rhol*c*IIpa);
+USPaT = @(t) USPa*USstep(t);
 elseif MODE == 2
+USPa = sqrt(2*rhol*c*USipa);
 USPaT = @ (t) USPa*USstep(t); 
-end 
+end
+
+for i = 1:length(QmRange)
+VecVeff0(i) = f3Veff(QmRange(i),0,USfreq);
+VecVeffPa(i) = f3Veff(QmRange(i),USPa,USfreq);
+end
+for j = 1:length(SONICrates)
+Vecrt0.(SONICrates{j}) = zeros(1,length(QmRange));
+VecrtPa.(SONICrates{j}) = zeros(1,length(QmRange));
+for i = 1:length(QmRange)
+Vecrt0.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),0,USfreq);
+VecrtPa.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),USPa,USfreq);
+end
+f1rt0.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',Vecrt0.(SONICrates{j}),Q);
+f1rtPa.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',VecrtPa.(SONICrates{j}),Q);
+end
+f1Veff0 = @(Q) nakeinterp1(QmRange',VecVeff0,Q);
+f1VeffPa = @(Q) nakeinterp1(QmRange',VecVeffPa,Q);
+
 OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
 %--------------------------------------------------------------------------
 % ---------------REGULAR OR FAST SPIKING NEURONS---------------------------
@@ -403,20 +402,20 @@ OdeOpts=odeset('MaxStep',dt,'AbsTol',1e-7,'RelTol',1e-4);
 % -------------------------------------------------------------------------
 elseif MODEL == 10
 [t,U] = ode113(@(t,U) SONIC_ThRT(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),Gna,Vna,...
-    Gk,Vk,Gl,Vl,GT,VT,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
+    Gk,Vk,Gl,Vl,GT,VT,minf,pinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % ----------------------GLOBUS PALLIDUS INTERNUS NUCLEUS ------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 11
 [t,U] = ode113(@(t,U) SONIC_GPi(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
-    Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),...
+    Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),...
     tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % ----------------------GLOBUS PALLIDUS EXTERNUS NUCLEUS-------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 12
 [t,U] = ode113(@(t,U) SONIC_GPe(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
-    Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),...
+    Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),...
     tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------MEDIUM SPINY STRIATUM NEURONS---------------------
@@ -438,30 +437,14 @@ APindex(1) = 0; % Remove circshift artifact
 APtimes = TvaluesY(APindex);  % AP times [s]
 clear APindex; % Save all memory that can be saved...
 NeuronActivated = ~isempty(APtimes); % Bool: 1 if neuron is activated
-   switch MODEL
-       case 1, MODELstr='RS';
-       case 2, MODELstr='FS';
-       case 3, MODELstr='LTS';
-       case 4, MODELstr='TC';
-       case 5, MODELstr='RE';
-       case 6, MODELstr='RS_FVX';
-       case 7, MODELstr='FS_FVX';
-       case 8, MODELstr='LTS_CAX';
-       case 9, MODELstr='STN';
-       case 10, MODELstr='Th-RT';
-       case 11, MODELstr='GPi';
-       case 12, MODELstr='GPe';
-       case 13, MODELstr='Str-MSN';
-       case 14, MODELstr='HH';
-   end
 if MODE == 2
-SaveStr=['APtimes(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
+SaveStr=['APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ').mat'];
 save(SaveStr,'APtimes');
 
-SaveStr2=['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
+SaveStr2=['Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ').mat'];
@@ -485,7 +468,7 @@ IIpa = IIpa*10^(3-2*find(SearchRange));
 end
 end
 disp(' ');
-Checkpoint=['CP(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
+Checkpoint=['CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa '):' num2str(SearchRange)];
@@ -494,7 +477,7 @@ fprintf('\n');
 end
 end
 if MODE == 1
-SaveStr=['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
+SaveStr=['Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
     USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ').mat'];    
@@ -512,7 +495,7 @@ if PLOT
 Charge = 10^5*Y(:,1); % Charge [nC/cm^2]
 end
 if PLOT == 2
-SaveDataStr=['Data(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
+SaveDataStr=['Data(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
 num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
 USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
     num2str(ESprf) ',' ESisppa ').mat'];
