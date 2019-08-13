@@ -381,7 +381,7 @@ if MODEL == 1 || MODEL == 2 || MODEL == 6 || MODEL == 7
 %-------------------LOW THRESHOLD SPIKING NEURONS--------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 3 || MODEL == 8
-[t,U] = ode113(@(t,U) SONIC_LTS(ESi,USPaT,USfreq,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
+[t,U] = ode113(@(t,U) SONIC_LTS(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
     Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------THALAMOCORTICAL NEURONS--------------------------------
