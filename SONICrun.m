@@ -1,5 +1,5 @@
 function SONICrun(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
-    ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode)
+    ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS)
 coder.extrinsic('nakeinterp1');
 % SONICrun is a speed-up version of funPES based on multi-scale
 % optimization with effective parameters. Based on:
@@ -29,7 +29,7 @@ USprf = str2double(USprf); USipa = str2double(USisppa); ESpstart = str2double(ES
 ESpd = str2double(ESpd); ESdc = str2double(ESdc); ESprf = str2double(ESprf);
 ESipa = str2double(ESisppa); PLOT = str2double(PLOT); 
 USibegin = str2double(USibegin); USiend = str2double(USiend);
-SearchMode = str2double(SearchMode);
+SearchMode = str2double(SearchMode); aBLS = str2double(aBLS);
 
 SearchPrecision = 2; % If MODE=1, number of significant digits of the solution
 % of the titration algorithm
@@ -56,7 +56,7 @@ tic;
 % 1. Parameters
 Qthresh = 0;            % Threshold for Q for AP-discrimination [nC/cm^2]
 Cm0 = 0.01;				% Rest capacitance (F/m^2)	 
-a=32*10^(-9);			% radius leaflet boundary (m)
+a=aBLS;	        		% radius leaflet boundary (m)
 c = 1515;				% Speed of sound surrounding medium (m/s)
 rhol = 1028;			% Density surrounding medium (kg/m^3)
 Rg = 8.314;             % Universal gas constant (J/(K*mol))
@@ -441,13 +441,13 @@ if MODE == 2
 SaveStr=['APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ').mat'];
 save(SaveStr,'APtimes');
 
 SaveStr2=['Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ').mat'];
 saveChargeSample = [TvaluesY, 10^5*Y(:,1)];
 save(SaveStr2,'saveChargeSample');
 break;
@@ -471,7 +471,7 @@ disp(' ');
 Checkpoint=['CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange)];
+        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) ')-aBLS=(' num2str(aBLS) ').mat'];
 disp(Checkpoint);   
 fprintf('\n'); 
 end
@@ -480,7 +480,7 @@ if MODE == 1
 SaveStr=['Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
     USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ').mat'];    
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ').mat'];    
 save(SaveStr,'IIpa');
 end
 TTime = toc;
