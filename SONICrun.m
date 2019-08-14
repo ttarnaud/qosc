@@ -290,7 +290,7 @@ end
 fVCa = @(cCai) 10^(3)*((Rg*Temp)/(2*Far))*log(cCae./cCai); % Nernst equation for Ca-potential [mV] (if not assumed constant)
 
 % 3. Initial conditions and timespan
-% (order:) Y = [Q,SONICgates, other gates [d20,r0,w0], wLock, hProtein, cCai]  (other gates are cCai/hprotein dependent)
+% (order:) Y = [Q,SONICgates [ alphabetically ] , other gates [r0,d20,w0], wLock, hProtein, cCai]  (other gates are cCai/hprotein dependent)
 Qm0 = Cm0*(10^(-3)*Vm0);            % Approximation of rest charge
 Y0 = zeros(round(length(SONICrates)/2)+1,1);
 Y0(1) = Qm0;
@@ -305,7 +305,7 @@ elseif MODEL == 9
 cCai0 = 5*10^(-6);
 d20 = d2inf(cCai0);
 r0 = rinf(cCai0);
-Y0 = horzcat(Y0,[d20,r0,cCai0]);
+Y0 = horzcat(Y0,[r0,d20,cCai0]);
 elseif MODEL == 11 || MODEL == 12
 CA0 = 4.32e-07;           % Rest concentration Ca (uM = umol/l)
 Y0 = horzcat(Y0,CA0);
