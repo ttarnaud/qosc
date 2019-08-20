@@ -43,7 +43,7 @@ MODEL = str2double(model);
 % STN is based on Otsuka et al.
 % Str-MSN is based on McCarthy et al.
 
-DISPLAY = 1;
+DISPLAY = 0;
 % Display level. Note: higher display level will give more runtime information but will slow the program 
 % DISPLAY = 0 -> No information displayed (use this option for HPC simulations)
 % DISPLAY = 1 -> Display progress based on update nr. alone
@@ -467,13 +467,15 @@ else
 IIpa = IIpa*10^(3-2*find(SearchRange));
 end
 end
-disp(' ');
+if DISPLAY
+disp(' '); %#ok<*UNRCH>
 Checkpoint=['CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')'];
 disp(Checkpoint);   
 fprintf('\n'); 
+end
 end
 end
 if MODE == 1
