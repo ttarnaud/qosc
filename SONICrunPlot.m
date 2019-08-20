@@ -6,7 +6,7 @@ I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 
-%% FIGURE 1
+%% FIGURE 5 Lemaire et al. (2018)
 MODEL = 1;
 switch MODEL
     case 1, ModelStr = 'RS';
