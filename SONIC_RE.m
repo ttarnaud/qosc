@@ -9,11 +9,11 @@ reverseStr = repmat(sprintf('\b'), 1, length(msg));
 end
 
 rate = struct;
-m = m*(m<=1)+(m>1); 
-n = n*(n<=1)+(n>1);
-h = h*(h<=1)+(h>1);
-s = s*(s<=1)+(s>1);
-u = u*(u<=1)+(u>1);
+m = m*(m<=1&m>=0)+(m>1); 
+n = n*(n<=1&n>=0)+(n>1);
+h = h*(h<=1&h>=0)+(h>1);
+s = s*(s<=1&s>=0)+(s>1);
+u = u*(u<=1&u>=0)+(u>1);
 rate.('m') = m; rate.('n') = n; rate.('h') = h;
 rate.('s') = s; rate.('u') = u;
 

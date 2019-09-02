@@ -8,8 +8,8 @@ fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
 rate = struct;
-h = h*(h<=1)+(h>1);
-r = r*(r<=1)+(r>1);
+h = h*(h<=1&h>=0)+(h>1);
+r = r*(r<=1&r>=0)+(r>1);
 rate.('h') = h; rate.('r') = r;
 
 if USPaT(t) == 0

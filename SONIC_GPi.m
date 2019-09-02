@@ -7,9 +7,9 @@ msg = sprintf('Progress: %3.1f', Progress);
 fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
-n = n*(n<=1)+(n>1);
-h = h*(h<=1)+(h>1);
-r = r*(r<=1)+(r>1);
+n = n*(n<=1&n>=0)+(n>1);
+h = h*(h<=1&h>=0)+(h>1);
+r = r*(r<=1&r>=0)+(r>1);
 rate.('n') = n; rate.('h') = h; rate.('r') = r;
 
 if USPaT(t) == 0

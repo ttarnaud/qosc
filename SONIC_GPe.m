@@ -8,9 +8,9 @@ fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
 rate = struct;
-n = n*(n<=1)+(n>1);
-h = h*(h<=1)+(h>1);
-r = r*(r<=1)+(r>1);
+n = n*(n<=1&n>=0)+(n>1);
+h = h*(h<=1&h>=0)+(h>1);
+r = r*(r<=1&r>=0)+(r>1);
 rate.('n') = n;
 rate.('h') = h;
 rate.('r') = r;
