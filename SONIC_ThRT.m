@@ -8,8 +8,9 @@ fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
 rate = struct;
-rate.('h') = h*(h<=1)+(h>1);
-rate.('r') = r*(r<=1)+(r>1);
+h = h*(h<=1)+(h>1);
+r = r*(r<=1)+(r>1);
+rate.('h') = h; rate.('r') = r;
 
 if USPaT(t) == 0
 Veff = f1Veff0(Q);

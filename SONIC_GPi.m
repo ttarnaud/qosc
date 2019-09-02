@@ -7,9 +7,10 @@ msg = sprintf('Progress: %3.1f', Progress);
 fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
-rate.('n') = n*(n<=1)+(n>1);
-rate.('h') = h*(h<=1)+(h>1);
-rate.('r') = r*(r<=1)+(r>1);
+n = n*(n<=1)+(n>1);
+h = h*(h<=1)+(h>1);
+r = r*(r<=1)+(r>1);
+rate.('n') = n; rate.('h') = h; rate.('r') = r;
 
 if USPaT(t) == 0
 Veff = f1Veff0(Q);

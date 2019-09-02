@@ -7,10 +7,11 @@ fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
 rate = struct;
-rate.('m') =  m*(m<=1)+(m>1); 
-rate.('n') = n*(n<=1)+(n>1);
-rate.('p') = p*(p<=1)+(p>1);
-rate.('h') = h*(h<=1)+(h>1);
+m = m*(m<=1)+(m>1);
+n = n*(n<=1)+(n>1);
+p = p*(p<=1)+(p>1);
+h = h*(h<=1)+(h>1);
+rate.('m') =  m; rate.('n') = n; rate.('p') = p; rate.('h') = h;
 
 if USPaT(t) == 0
 Veff = f1Veff0(Q);

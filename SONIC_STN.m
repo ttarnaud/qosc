@@ -8,17 +8,20 @@ fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
 rate = struct;
-rate.('m') = m*(m<=1)+(m>1); 
-rate.('n') = n*(n<=1)+(n>1);
-rate.('p') = p*(p<=1)+(p>1);
-rate.('h') = h*(h<=1)+(h>1);
-rate.('q') = q*(q<=1)+(q>1);
-rate.('r') = r*(r<=1)+(r>1);
-rate.('a') = a*(a<=1)+(a>1);
-rate.('b') = b*(b<=1)+(b>1);
-rate.('c') = c*(c<=1)+(c>1);
-rate.('d1') = d1*(d1<=1)+(d1>1);
-rate.('d2') = d2*(d2<=1)+(d2>1);
+m = m*(m<=1)+(m>1);
+n = n*(n<=1)+(n>1);
+p = p*(p<=1)+(p>1);
+h = h*(h<=1)+(h>1);
+q = q*(q<=1)+(q>1);
+r = r*(r<=1)+(r>1);
+a =  a*(a<=1)+(a>1);
+b = b*(b<=1)+(b>1);
+c =  c*(c<=1)+(c>1);
+d1 = d1*(d1<=1)+(d1>1);
+d2 = d2*(d2<=1)+(d2>1);
+rate.('m') = m; rate.('n') = n; rate.('p') = p; rate.('h') = h;
+rate.('q') = q; rate.('r') = r; rate.('a') = a; rate.('b') = b;
+rate.('c') = c; rate.('d1') = d1; rate.('d2') = d2;
 
 kcCai = 10^3*cCai;          % A trick to improve the Jacobian (and speed-up the solver)
 
