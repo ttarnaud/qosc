@@ -38,7 +38,7 @@ coder.extrinsic('nakeinterp1');
 
 % Remark 2: Speed considerations
 % SpeedUp -> NICE-model, UpSpeed -> BLS-model
-SpeedUp = 5;
+SpeedUp = 1;
 UpSpeed = 4;
 CORRTres = 0.99;     % Threshold for normalized unbiased autocorrelation in
 PerCheckMax = 4;    % At certain unpredictable parameters-values, presumed due to non-linearities, the BLS equations
