@@ -1,5 +1,5 @@
 function Out = SONIC_MSN(ESi,USPaT,DISPLAY,tNICE,t,Q,h,m,n,p,Gna,Vna,Gk,Vk,Gl,Vl,Vm,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
-if DISPLAY == 2
+if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>
 msg = sprintf('Progress: %3.1f', Progress); 

@@ -6,7 +6,7 @@ I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 debugSwitch = 4;            % Number: only run part of the program. nan : run everything 
-FigurePlot = 8;             % Number: plot this figure number. nan: plot everything
+FigurePlot = 7;             % Number: plot this figure number. nan: plot everything
 
 %% FIGURE 5 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 5
@@ -450,23 +450,24 @@ USdc = linspace(0.01,1,100); % (-)
 USprf = [10,100,1000];          % Hz   
 PaR = logspace(log10(10e3),log10(600e3),30); % (Pa)
 Modelnr = [1,3];
- 
+[mModelnr,mUSprf,mUSdc,mPaR] = ndgrid(Modelnr,USprf,USdc,PaR);
+mModelnr = permute(mModelnr,[2 1 3 4]); mUSprf = permute(mUSprf,[2 1 3 4]); 
+mUSdc = permute(mUSdc,[2 1 3 4]); mPaR = permute(mPaR,[2 1 3 4]);
+
 FR = zeros(length(Modelnr),length(USprf),length(USdc),length(PaR));
-iUP = 0; reverseStr = '';
 fprintf('Calculating LIFUS behaviour maps \n');
+fprintf('Progress:');
+fprintf(['\n' repmat('.',1,numel(FR)) '\n\n']);
+parfor ii = 1:numel(FR)          
+            fprintf('\b|\n');
+            SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(mUSdc(ii)),num2str(mUSprf(ii)),...
+            num2str(Pa2I(mPaR(ii))),'0','0','1','0','0','0',num2str(mModelnr(ii)),'0','0','0',num2str(aBLS));
+end
+
 for iMODEL = 1:length(Modelnr)
     for iprf = 1:length(USprf)
         for idc = 1:length(USdc)
-            for iPa = 1:length(PaR)
-            iUP = iUP+1;    
-            Progress = 100*iUP/numel(FR);  %#ok<*NASGU>
-            msg = sprintf('Progress: %3.3f', Progress); 
-            fprintf([reverseStr, msg]);
-            reverseStr = repmat(sprintf('\b'), 1, length(msg));     
-                
-            SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc(idc)),num2str(USprf(iprf)),...
-            num2str(Pa2I(PaR(iPa))),'0','0','1','0','0','0',num2str(Modelnr(iMODEL)),'0','0','0',num2str(aBLS));
-
+            for iPa = 1:length(PaR) 
             ll = load(['APtimes(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdc(idc)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
             num2str(aBLS) ').mat']);
@@ -485,15 +486,25 @@ for iMODEL = 1:length(Modelnr)
     end
 end
 
-% TODO: program the plot!
-
+for iMODEL = 1:length(Modelnr)
+    for iprf = 1:length(USprf)
+        cFR(:,:) = FR(iMODEL,iprf,:,:); 
+        subplot(2,3,(iMODEL-1)*3+iprf);
+        imagesc(100*USdc,10^(-3)*PaR,cFR);
+        if iprf == 1, ylabel('Amplitude (kPa)');
+        elseif iprf == 2, title([MODELstr{iMODEL} ' neuron']); 
+        elseif iprf == 3, cb = colorbar('location','eastoutside'); ylabel(cb,'Firing rate (Hz)');
+        end
+        xlabel('Duty cycle (%)');
+    end
+end
 end
 
 %% FIGURE 8 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 8
 MODELstr = {'RS','FS','LTS'}; lineStyles = {'-','--'}; iColor = 0;
-lineColors = {[0.4568 0.4568 0.9906],[0.1092 0.1092 0.9978],[0 0 0.5931],...
-    [0.4568 0.9906 0.4568],[0.1092 0.9978 0.1092],[0 0.5931 0]}; 
+lineColors = {[0.4568 0.9906 0.4568],[0.1092 0.9978 0.1092],[0 0.5931 0],...
+    [0.4568 0.4568 0.9906],[0.1092 0.1092 0.9978],[0 0 0.5931]}; 
 Legend = {{'16 nm','32 nm','64 nm'},{'20 kHz','500 kHz','4 MHz'}};
 
 Tsim = 2;     % (s)
@@ -506,7 +517,7 @@ aBLS = {[16e-9,32e-9,64e-9],(32e-9)};  % (m)
 USdc = {linspace(0.01,1,20),linspace(0.01,1,20)}; % (-)
 Modelnr = {[1,3],[1,3]};
 
-figure; set(gcf,'color','w');
+figure; set(gcf,'color','w'); 
 iUP = 0; reverseStr = '';
 fprintf('Calculating sensitivity of threshold-DC plots to frequency and aBLS \n');
 for subPlot = 1:2
@@ -526,9 +537,8 @@ for iMODEL = 1:length(ModelnrRange)
             fprintf([reverseStr, msg]);
             reverseStr = repmat(sprintf('\b'), 1, length(msg));     
                 
-                
             SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreqRange(iFreq)),num2str(USdcRange(idc)),num2str(USprf),...
-            '0','0','0','1','0','0','0',num2str(ModelnrRange(iMODEL)),'0','0','0',num2str(aBLSRange(iaBLS)));
+            '0','0','0','1','0','0','0',num2str(ModelnrRange(iMODEL)),'0',num2str(Pa2I(600e3)),'1',num2str(aBLSRange(iaBLS)));
             ltf = load(['Thresh(' MODELstr{ModelnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdcRange(idc)) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
             num2str(aBLSRange(iaBLS)) ').mat']);
@@ -543,18 +553,102 @@ end
      
      hold on;
      for iaBLS = 1:length(aBLSRange)
-         for iFreq = 1:length(FreqRange)
+         for iFreq = 1:length(USfreqRange)
              iColor = iColor+1;
              for iMODEL = 1:length(ModelnrRange)
-             plot(100*USdcRange{subPlot},ThreshPa(iMODEL,iaBLS,iFreq,:),'linestyle',LineStyles{iMODEL},'linecolor',lineColors{iColor});
+             plot(100*USdcRange,permute(10^(-3)*ThreshPa(iMODEL,iaBLS,iFreq,:),[4 1 2 3]),'linestyle',lineStyles{iMODEL},'color',lineColors{iColor});
              end   
          end
      end
-     legend(Legend{subPlot});
+     set(gca,'yscale','log');
+     Lines = findobj(gca,'type','line');
+     legend(Lines(2:2:6),Legend{subPlot});
      xlabel('Duty cycle (%)');
      ylabel('Pressure amplitude (kPa)');
      hold off;
 
 end
+end
 
+%% FIGURE 9 Lemaire et al. (2018)
+if isnan(FigurePlot) || FigurePlot == 9
+Tsim = 2.5;     % (s)
+USpd = 1;   % (s)
+USps = 0.5;  % (s)
+USprf = 0; USdc = 1; % (Hz), (-)  
+USfreq = 500e3; % (Hz)
+aBLS = 32e-9;  % (m)
+Modelnr = 9;    
+PaR = {I2Pa([(10:10:100) (105:5:120) (121:1:140)]),[I2Pa(70),I2Pa(125),I2Pa(135)]};
+figure; set(gcf,'color','w'); reverseStr = ''; 
+MODELstr{9} = 'STN';
+fprintf('Calculating subthalamic nucleus plots \n');
+hf_sub = nan(2,1); hp = nan(2,1); 
+load('redCmap.mat'); redCmap = redCmap(1:round(size(redCmap,1)*(0.8)),:);
+for subPlot = 1:2
+iUP = 0;
+fprintf('Subplot (%d/2) \n',subPlot);
+PaRRange = PaR{subPlot};
+hf_sub(subPlot) = figure(subPlot);
+hp(subPlot) = uipanel('Parent',hf_sub(subPlot),'Position',[0 0 1 1]);
+if subPlot == 1 
+subplot(1,1,1,'Parent',hp(subPlot));
+end
+    
+    for iPa = 1:length(PaRRange)
+    if subPlot == 2
+    subplot(length(PaRRange),1,iPa,'Parent',hp(subPlot));
+    end
+    iUP = iUP+1;    
+    Progress = 100*iUP/numel(PaRRange);  %#ok<*NASGU>
+    msg = sprintf('Progress: %3.3f', Progress); 
+    fprintf([reverseStr, msg]);
+    reverseStr = repmat(sprintf('\b'), 1, length(msg));     
+
+    SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),...
+    num2str(Pa2I(PaRRange(iPa))),'0','0','1','0','0','0',num2str(Modelnr),'0','0','0',num2str(aBLS));
+
+    if subPlot == 1
+    hold on;
+    ll = load(['APtimes(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+    num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
+    num2str(aBLS) ').mat']);
+    APtimes = ll.APtimes(ll.APtimes>=USps&ll.APtimes<=(USps+USpd)); %(s)
+    FR = 1./diff(APtimes);        % (Hz)
+    plot(10^3*APtimes(1:end-1),FR,'color',redCmap(1+round((size(redCmap,1)-1)*(PaRRange(iPa)/PaRRange(end))),:));
+    xlabel('Time [ms]'); ylabel('Firing rate [Hz]');
+    rc = colorbar('location','eastoutside','colormap',redCmap);
+    set(rc,'TickLabels',10^(-3)*PaRRange(end)*rc.Ticks);
+    ylabel(rc,'Pressure [kPa]');
+    hold off;
+    else
+    lr = load(['Chargevt(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+    num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
+    num2str(aBLS) ').mat']);
+    
+    Qvt = lr.saveChargeSample(:,2); timeline = lr.saveChargeSample(:,1); 
+    plot(timeline*10^3,Qvt*10^5);
+    title({[num2str(PaRRange(iPa)*10^(-3)) 'kPa'],['(' num2str(Pa2I(PaRRange(iPa))) ' W/m^2)']},'Units','Normalized','Position',[1.05,0.5,1])
+    ylabel('Q [nC/cm^2]');
+    if iPa == length(PaRRange)
+    xlabel('Time [ms]');    
+    end
+    end
+    delete(['APtimes(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+    num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
+    num2str(aBLS) ').mat']);   
+    delete(['Chargevt(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+    num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
+    num2str(aBLS) ').mat']); 
+    end
+end
+hf_main = figure(3);
+npanels = numel(hp);
+hp_sub = nan(1,npanels);
+for idx = 1:npanels
+hp_sub(idx) = copyobj(hp(idx),hf_main);
+set(hp_sub(idx),'Position',[(idx-1)/npanels,0,1/npanels,1]);
+close(figure(idx));
+end
+set(gcf,'color','w');
 end

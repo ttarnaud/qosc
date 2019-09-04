@@ -1,6 +1,6 @@
 function Out = SONIC_TC(ESi,USPaT,DISPLAY,tNICE,t,Q,h,m,n,s,u,w,wLock,hProtein,cCai,...
     Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,GKL,Gh,ginc,Vh,k1,k2,k3,k4,Far,deffCa,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
-if DISPLAY == 2
+if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>
 msg = sprintf('Progress: %3.1f', Progress); 

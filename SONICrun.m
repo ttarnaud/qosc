@@ -43,7 +43,7 @@ MODEL = str2double(model);
 % STN is based on Otsuka et al.
 % Str-MSN is based on McCarthy et al.
 
-DISPLAY = 0;
+DISPLAY = 1;
 % Display level. Note: higher display level will give more runtime information but will slow the program 
 % DISPLAY = 0 -> No information displayed (use this option for HPC simulations)
 % DISPLAY = 1 -> Display progress based on update nr. alone
@@ -51,6 +51,10 @@ DISPLAY = 0;
 % Discretisation parameters
 dt = 50e-6;            % Discretisation time (s)
 atol = 1e-6; rtol = 1e-3; % absolute and relative VSVO-tolerances
+maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,apb). Set to 'inf' if no maxRate
+% Physically protein gate opening/closing will have a minimal time delay, irrespective of voltage (~ 1/maxRate). 
+% Computationally, very high maxRate will increase the stiffness of the set of equations, without important alterations in the solution set 
+% (e.g. for all practical purposes, gate opening from 0->1 in 1 us is equal to infinitely fast opening) 
 
 tic;
 % 1. Parameters
@@ -173,6 +177,10 @@ GA =50;                 % Maximal conductance of A-type K channel (S/m^2)
 GCa=10;                 % Maximal conductance of Ca2+ activated K-channel (S/m^2)
 Vm0=-58;                % Resting potential (mV)
 tauCa = 0.5*10^(-3);    % Calcium decay time constant (s) 
+rinf = @(kCA) 1./(1+exp(-(kCA-0.17)./0.08));  % rest r-value [-]
+d2inf = @(kCA) 1./(1+exp((kCA-0.1)./0.02));        % rest d2-value [-]
+taur = @(kCA) (10^(-3))*2;  % Time-constant [s] for r
+taud2 = @(kCA) (10^(-3))*130; % Time constant [s] for d2
 modelName = 'STN';
 elseif MODEL == 10      % Thalamic Rubin-Terman based neuron
 Gl=0.5;                 % Maximal conductance of non-specific non-voltage dependent ion channel (S/m^2)  
@@ -268,7 +276,7 @@ SONICrates = sort(SONICfields(cellfun(@(X) contains(X,'a_')|contains(X,'apb_'),S
 SONICgates = cellfun(@(X) X(3:end),SONICrates(cellfun(@(X) contains(X,'a_'),SONICrates)),'UniformOutput',0); 
 rt = struct;
 for i = 1:length(SONICrates)
-rt.(SONICrates{i}) = SONICtable.(SONICrates{i});
+rt.(SONICrates{i}) = min(SONICtable.(SONICrates{i}),maxRate);
 end
 f4Veff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Veff4D,Qm,USPa,USfreq,aBLS,'linear');
 f4Zeff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Zeff4D,Qm,USPa,USfreq,aBLS,'linear');
@@ -305,7 +313,7 @@ elseif MODEL == 9
 cCai0 = 5*10^(-6);
 d20 = d2inf(cCai0);
 r0 = rinf(cCai0);
-Y0 = horzcat(Y0,[r0,d20,cCai0]);
+Y0 = vertcat(Y0,[r0,d20,cCai0]');
 elseif MODEL == 11 || MODEL == 12
 CA0 = 4.32e-07;           % Rest concentration Ca (uM = umol/l)
 Y0 = horzcat(Y0,CA0);
@@ -317,15 +325,16 @@ if MODEL == 4
 % dP/dt = k1*(1-P)*cCa^2-k2*P
 % dwLock/dt = k3*w*P-k4*wLock
 hProtein0 = (k1*cCai0^2)/(k2+k1*cCai0^2); % Intitial condition for w-gate protein (-)
-w0 = winf(Vm0)/(1+winf(Vm0)*((k3*hProtein0)/k4));
+winf_in_Vm0 = f3rt.('a_w')(Qm0,0,1e6)./f3rt.('apb_w')(Qm0,0,1e6);
+w0 = winf_in_Vm0/((1+winf_in_Vm0)*((k3*hProtein0)/k4));
 wLock0 = (k3/k4)*(w0*hProtein0);   % Initial condition for locked w-gate
-Y0 = horzcat(Y0,[w0,wLock0,hProtein0]);
+Y0 = vertcat(Y0,[w0,wLock0,hProtein0]');
 end
 
 
 % 4. Solver
 global reverseStr;  %#ok<*TLEV>
-if DISPLAY, disp('Solver started'); end
+if DISPLAY, fprintf('\nSolver started\n'); end
 SearchRange = [USibegin USiend]; PrecisionCheck = 0;
 if SearchMode % SearchMode = 1
 IIpa = (SearchRange(1)+SearchRange(2))/2; % W/m^2
@@ -368,66 +377,66 @@ OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
 % ---------------REGULAR OR FAST SPIKING NEURONS---------------------------
 %--------------------------------------------------------------------------
 if MODEL == 1 || MODEL == 2 || MODEL == 6 || MODEL == 7
-[t,U] = ode23s(@(t,U) SONIC_RSFS(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
+[t,U] = ode113(@(t,U) SONIC_RSFS(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     Gna,Vna,Gk,Vk,Gm,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------LOW THRESHOLD SPIKING NEURONS--------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 3 || MODEL == 8
-[t,U] = ode23s(@(t,U) SONIC_LTS(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
+[t,U] = ode113(@(t,U) SONIC_LTS(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
     Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------THALAMOCORTICAL NEURONS--------------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 4
-[t,U] = ode23s(@(t,U) SONIC_TC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),U(8),...
+[t,U] = ode113(@(t,U) SONIC_TC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),U(8),...
     U(9),U(10),Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,GKL,Gh,ginc,Vh,k1,k2,k3,k4,Far,deffCa,tauCa,...
     f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 %--------------------------------------------------------------------------
 %------------------NUCLEUS RETICULARIS NEURONS-----------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 5
-[t,U] = ode23s(@(t,U) SONIC_RE(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
+[t,U] = ode113(@(t,U) SONIC_RE(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
     Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,Far,deffCa,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------SUBTHALAMIC NUCLEUS MODEL-------------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 9
-OdeOpts=odeset('MaxStep',dt,'AbsTol',1e-7,'RelTol',1e-4);
-[t,U] = ode23s(@(t,U) SONIC_STN(ESi,USPaT,DISPLAY,tNICE,t,...
+[t,U] = ode113(@(t,U) SONIC_STN(ESi,USPaT,DISPLAY,tNICE,t,...
     U(1),U(2),U(3),U(4),U(5),U(6),U(7),U(8),U(9),U(10),U(11),U(12),U(13),...
-    Gna,Vna,Gk,Vk,Gl,Vl,GT,fVCa,GCa,GA,GL,Far,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
+    Gna,Vna,Gk,Vk,Gl,Vl,GT,fVCa,GCa,GA,GL,Far,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,...
+    rinf,d2inf,taur,taud2,SONICgates),tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------THALAMUS RUBIN-TERMAN MODEL-----------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 10
-[t,U] = ode23s(@(t,U) SONIC_ThRT(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),Gna,Vna,...
+[t,U] = ode113(@(t,U) SONIC_ThRT(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),Gna,Vna,...
     Gk,Vk,Gl,Vl,GT,VT,minf,pinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % ----------------------GLOBUS PALLIDUS INTERNUS NUCLEUS ------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 11
-[t,U] = ode23s(@(t,U) SONIC_GPi(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
+[t,U] = ode113(@(t,U) SONIC_GPi(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),...
     tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % ----------------------GLOBUS PALLIDUS EXTERNUS NUCLEUS-------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 12
-[t,U] = ode23s(@(t,U) SONIC_GPe(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
+[t,U] = ode113(@(t,U) SONIC_GPe(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),...
     tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------MEDIUM SPINY STRIATUM NEURONS---------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 13
-[t,U] = ode23s(@(t,U) SONIC_MSN(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
+[t,U] = ode113(@(t,U) SONIC_MSN(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     Gna,Vna,Gk,Vk,Gl,Vl,Vm,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 % -------------------------------------------------------------------------
 % --------------------------HODGKIN-HUXLEY NEURONS-------------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 14
-[t,U] = ode23s(@(t,U) SONIC_HH(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),...
+[t,U] = ode113(@(t,U) SONIC_HH(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),...
     Gna,Vna,Gk,Vk,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates),tNICE,Y0,OdeOpts);
 end
 TvaluesY = t; Y = U;
@@ -489,7 +498,7 @@ TTime = toc;
 if DISPLAY
 disp(' ');
 disp(['Program finished in ' num2str(round(TTime,1)) 's']);
-disp('Post-processing...');
+fprintf('Post-processing...\n'); 
 end
 
 % 5. Results

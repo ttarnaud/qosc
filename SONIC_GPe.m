@@ -1,6 +1,6 @@
 function Out = SONIC_GPe(ESi,USPaT,DISPLAY,tNICE,t,Q,h,n,r,CA,Gna,Vna,Gk,Vk,Gl,Vl,...
     GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
-if DISPLAY == 2
+if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>
 msg = sprintf('Progress: %3.1f', Progress); 
