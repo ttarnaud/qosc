@@ -504,6 +504,13 @@ end
 % 5. Results
 if PLOT
 Charge = 10^5*Y(:,1); % Charge [nC/cm^2]
+if MODEL == 4
+SONICgatesN = vertcat(SONICgates,{'w0','wLock','hProtein'}');
+elseif MODEL == 9
+SONICgatesN = vertcat(SONICgates,{'r0','d20'}');    
+end
+if any(MODEL==[4,5,9,11,12])
+SONICgatesN = vertcat(SONICgatesN,'cCai');
 end
 if PLOT == 2
 SaveDataStr=['Data(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
@@ -530,10 +537,10 @@ subplot(1+ceil(nrGates/2),1,i+1);
 hold on;
 yyaxis left;
 plot(TvaluesYms,Y(:,2*i));
-ylabel(SONICgates{2*i-1});
+ylabel(SONICgatesN{2*i-1});
 yyaxis right;
 plot(TvaluesYms,Y(:,2*i+1));
-ylabel(SONICgates{2*i});
+ylabel(SONICgatesN{2*i});
 hold off;
 set(gcf,'color','w');
 end
@@ -541,7 +548,7 @@ if mod(nrGates,2)==1
 subplot(1+ceil(nrGates/2),1,1+ceil(nrGates/2));
 hold on;
 plot(TvaluesYms,Y(:,end));
-ylabel(SONICgates{nrGates});
+ylabel(SONICgatesN{nrGates});
 hold off;
 end
 xlabel('Time [ms]');
