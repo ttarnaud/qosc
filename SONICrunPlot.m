@@ -5,8 +5,8 @@ Pa2I = @(Pa) Pa.^2/(2*rhol*c);
 I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
-debugSwitch = 4;            % Number: only run part of the program. nan : run everything 
-FigurePlot = 7;             % Number: plot this figure number. nan: plot everything
+debugSwitch = nan;            % Number: only run part of the program. nan : run everything 
+FigurePlot = 5;             % Number: plot this figure number. nan: plot everything
 
 %% FIGURE 5 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 5
@@ -43,7 +43,6 @@ subplot(7,3,i);
 hold on;
 for iFreq = 1:length(USfreq{i})
 for iaBLS = 1:length(aBLS{i})
-plotnr = plotnr+1;
 SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq{i}(iFreq)),num2str(USdc),num2str(USprf),...
 '0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)));
 lt = load(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
@@ -62,12 +61,13 @@ funPESa(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq{i}(iFreq)),
 num2str(Pa2I(PaThRange(iPa))),'0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)));
 end
 for iPa = 1:length(PaThRange)
+plotnr = plotnr+1;
 lt2 = load(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaThRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLS{i}(iaBLS)) ').mat']);
 Qvt = lt2.saveChargeSample(:,2); timeline = lt2.saveChargeSample(:,1);
 iNICEcolor = iNICEcolor+1;
-g(plotnr) = plot(10^3*timeline,Qvt,'linestyle','-','color',SONICcolors{iNICEcolor},'linewidth',2); %#ok<SAGROW>
+g{i}(plotnr) = plot(10^3*timeline,Qvt,'linestyle','-','color',SONICcolors{iNICEcolor},'linewidth',2); %#ok<SAGROW>
 delete(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaThRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLS{i}(iaBLS)) ').mat']);
@@ -101,7 +101,7 @@ if (i==1)
     ylabel('Q [nC/cm^2]');
 end
 xlabel('Time [ms]');
-legend(g,legendStr{i});
+legend(g{i},legendStr{i});
 end
 end
 
@@ -580,12 +580,14 @@ USfreq = 500e3; % (Hz)
 aBLS = 32e-9;  % (m)
 Modelnr = 9;    
 PaR = {I2Pa([(10:10:100) (105:5:120) (121:1:140)]),[I2Pa(70),I2Pa(125),I2Pa(135)]};
-figure; set(gcf,'color','w'); reverseStr = ''; 
+figure; set(gcf,'color','w'); 
+MODELstr = {};
 MODELstr{9} = 'STN';
 fprintf('Calculating subthalamic nucleus plots \n');
 hf_sub = nan(2,1); hp = nan(2,1); 
 load('redCmap.mat'); redCmap = redCmap(1:round(size(redCmap,1)*(0.8)),:);
 for subPlot = 1:2
+reverseStr = ''; 
 iUP = 0;
 fprintf('Subplot (%d/2) \n',subPlot);
 PaRRange = PaR{subPlot};
