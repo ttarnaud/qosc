@@ -6,7 +6,7 @@ I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 debugSwitch = nan;            % Number: only run part of the program. nan : run everything 
-FigurePlot = 5;             % Number: plot this figure number. nan: plot everything
+FigurePlot = 7;             % Number: plot this figure number. nan: plot everything
 
 %% FIGURE 5 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 5
@@ -455,6 +455,7 @@ mModelnr = permute(mModelnr,[2 1 3 4]); mUSprf = permute(mUSprf,[2 1 3 4]);
 mUSdc = permute(mUSdc,[2 1 3 4]); mPaR = permute(mPaR,[2 1 3 4]);
 
 FR = zeros(length(Modelnr),length(USprf),length(USdc),length(PaR));
+p = gcp;
 fprintf('Calculating LIFUS behaviour maps \n');
 fprintf('Progress:');
 fprintf(['\n' repmat('.',1,numel(FR)) '\n\n']);
