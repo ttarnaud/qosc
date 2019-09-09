@@ -504,8 +504,8 @@ end
 %% FIGURE 8 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 8
 MODELstr = {'RS','FS','LTS'}; lineStyles = {'-','--'}; iColor = 0;
-lineColors = {[0.4568 0.9906 0.4568],[0.1092 0.9978 0.1092],[0 0.5931 0],...
-    [0.4568 0.4568 0.9906],[0.1092 0.1092 0.9978],[0 0 0.5931]}; 
+lineColors = {[0.4568 0.4568 0.9906],[0.1092 0.1092 0.9978],[0 0 0.5931],...
+    [0.4568 0.9906 0.4568],[0.1092 0.9978 0.1092],[0 0.5931 0]}; 
 Legend = {{'16 nm','32 nm','64 nm'},{'20 kHz','500 kHz','4 MHz'}};
 
 Tsim = 2;     % (s)
@@ -519,10 +519,10 @@ USdc = {linspace(0.01,1,20),linspace(0.01,1,20)}; % (-)
 Modelnr = {[1,3],[1,3]};
 
 figure; set(gcf,'color','w'); 
-iUP = 0; reverseStr = '';
 fprintf('Calculating sensitivity of threshold-DC plots to frequency and aBLS \n');
 for subPlot = 1:2
-    fprintf('Subplot (%d/2) \n',subPlot);
+    iUP = 0; reverseStr = '';
+    fprintf('\n Subplot (%d/2) \n',subPlot);
     subplot(1,2,subPlot);
     USfreqRange = USfreq{subPlot}; aBLSRange = aBLS{subPlot};
     USdcRange = USdc{subPlot}; ModelnrRange = Modelnr{subPlot};
@@ -561,9 +561,9 @@ end
              end   
          end
      end
-     set(gca,'yscale','log');
+     set(gca,'yscale','log','ylim',[10 600]);
      Lines = findobj(gca,'type','line');
-     legend(Lines(2:2:6),Legend{subPlot});
+     legend(Lines(6:-2:2),Legend{subPlot});
      xlabel('Duty cycle (%)');
      ylabel('Pressure amplitude (kPa)');
      hold off;
