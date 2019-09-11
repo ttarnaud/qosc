@@ -437,6 +437,7 @@ set(findobj('type','axes'),'box','off');
 end
 
 %% FIGURE 7 Lemaire et al. (2018)
+% (a) Color maps 
 if isnan(FigurePlot) || FigurePlot == 7
 MODELstr = {'RS','FS','LTS'};
 
@@ -487,18 +488,88 @@ for iMODEL = 1:length(Modelnr)
     end
 end
 
+figure; set(gcf,'color','w');
 for iMODEL = 1:length(Modelnr)
     for iprf = 1:length(USprf)
         cFR(:,:) = FR(iMODEL,iprf,:,:); 
         subplot(2,3,(iMODEL-1)*3+iprf);
-        imagesc(100*USdc,10^(-3)*PaR,cFR);
+        pcolor(100*USdc,10^(-3)*PaR,cFR'); 
         if iprf == 1, ylabel('Amplitude (kPa)');
-        elseif iprf == 2, title([MODELstr{iMODEL} ' neuron']); 
+        elseif iprf == 2, title([MODELstr{Modelnr(iMODEL)} ' neuron']); 
         elseif iprf == 3, cb = colorbar('location','eastoutside'); ylabel(cb,'Firing rate (Hz)');
         end
         xlabel('Duty cycle (%)');
+        set(gca,'yscale','log','ydir','normal','colorscale','log');
+        colormap(gca,'winter');
+        shading flat
     end
 end
+end
+% (b) individual sims
+SONICRS = load('SONIC-RS.mat'); SONICLTS = load('SONIC-LTS.mat');
+SONICtableRS = SONICRS.SONICtable; SONICtableLTS = SONICLTS.SONICtable;
+QmRangeRS = SONICtableRS.QmRange; USPaRangeRS = SONICtableRS.USPaRange; 
+USfreqRangeRS = SONICtableRS.USfreqRange; aBLSRangeRS = SONICtableRS.aBLSRange;
+QmRangeLTS = SONICtableLTS.QmRange; USPaRangeLTS = SONICtableLTS.USPaRange; 
+USfreqRangeLTS = SONICtableLTS.USfreqRange; aBLSRangeLTS = SONICtableLTS.aBLSRange;
+
+Veff4DRS = SONICtableRS.Veff; Veff4DLTS = SONICtableLTS.Veff;
+
+f4VeffRS = @(Qm,USPa,USfreq,aBLS) interpn(QmRangeRS,USPaRangeRS,USfreqRangeRS,aBLSRangeRS,Veff4DRS,Qm,USPa,USfreq,aBLS,'linear');
+f2VeffRS = @(Qm,USPa) f4VeffRS(Qm,USPa,USfreq,aBLS); 
+f4VeffLTS = @(Qm,USPa,USfreq,aBLS) interpn(QmRangeLTS,USPaRangeLTS,USfreqRangeLTS,aBLSRangeLTS,Veff4DLTS,Qm,USPa,USfreq,aBLS,'linear');
+f2VeffLTS = @(Qm,USPa) f4VeffLTS(Qm,USPa,USfreq,aBLS); 
+f2Veff = {f2VeffRS,f2VeffLTS};
+QmRange = {QmRangeRS,QmRangeLTS};
+
+figure; set(gcf,'color','w');
+
+USdc = {[0.24,0.35],[0.52,0.59],[0.42,0.71];[0.08,0.2],[0.17,0.54],[0.09,0.57]};
+PaR = {[200e3,200e3],[392.8e3,392.8e3],[127e3,223.3e3];[54.42e3,127e3],[223.3e3,257.2e3],[41.04e3,146.2e3]};
+fprintf('\nCalculating cases in behaviour maps \n'); 
+for iMODEL = 1:2
+    for iprf = 1:3
+    fprintf('Case progress: (%d/6) \n',(iMODEL-1)*3+iprf)
+    for icase = 1:2
+    subplot(5,3,9*(iMODEL-1)+iprf+(icase-1)*3);
+    SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc{iMODEL,iprf}(icase)),num2str(USprf(iprf)),...
+            num2str(Pa2I(PaR{iMODEL,iprf}(icase))),'0','0','1','0','0','0',num2str(Modelnr(iMODEL)),'0','0','0',num2str(aBLS));
+    
+    ll = load(['Chargevt(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+         num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
+         num2str(aBLS) ').mat']); 
+    
+    USprp = (1/USprf(iprf));      % Pulse repetition period (s)
+    USstep = @(t) double(mod(t-USps,USprp)<=USdc{iMODEL,iprf}(icase)*USprp).*double(t>=USps&t<=USpd+USps);
+    
+    PaLine = (PaR{iMODEL,iprf}(icase).*USstep(ll.saveChargeSample(:,1)));
+    VeffSample = zeros(size(PaLine));
+    for i = 1:length(VeffSample)
+    VeffSample(i) = f2Veff{iMODEL}(10^(-5)*ll.saveChargeSample(i,2),PaLine(i));
+    end
+
+    yyaxis('left');
+    hold on;
+    plot(ll.saveChargeSample(:,1),VeffSample); ylim([-100,50]);
+    if iprf == 1, ylabel('V_{eff} [mV]'); end
+    hold off;
+    yyaxis('right');
+    hold on;
+    plot(ll.saveChargeSample(:,1),ll.saveChargeSample(:,2)); ylim([-100,50]);
+    if iprf == 1, ylabel('Q [nC/cm^2]'); end
+    if icase == 2, xlabel('Time [s]'); end
+    if icase == 1 && iprf == 2, title([MODELstr{Modelnr(iMODEL)} ' neuron']); end
+    hold off;
+
+     
+    delete(['APtimes(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+    num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
+    num2str(aBLS) ').mat']);   
+    delete(['Chargevt(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
+    num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
+    num2str(aBLS) ').mat']);
+    end 
+    end
 end
 
 %% FIGURE 8 Lemaire et al. (2018)

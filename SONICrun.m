@@ -512,6 +512,7 @@ end
 if any(MODEL==[4,5,9,11,12])
 SONICgatesN = vertcat(SONICgatesN,'cCai');
 end
+if ~exist('SONICgatesN','var'), SONICgatesN = SONICgates; end
 if PLOT == 2
 SaveDataStr=['Data(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
 num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
