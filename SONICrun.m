@@ -191,6 +191,8 @@ Gk=50;                  % Maximal conductance of the K-channel (S/m^2)
 Vk=-75;                 % K nernst potential (mV)
 GT=50;                  % Maximal conductance of T-type low threshold Ca2+ channels (S/m^2)
 Vm0=-65;                % Resting potential (mV)
+minf = @(V) 1./(1+exp(-(V+37)/7));            % rest m-value [-]
+pinf = @(V) 1./(1+exp(-(V+60)/6.2));            % rest p-value [-]
 modelName = 'Th_RT';
 elseif MODEL == 11      % Globus pallidus internus neuron
 Gl=1;                   % Maximal conductance of the non-voltage dependent non-specific ion channels (S/m^2)
@@ -207,6 +209,9 @@ VCa=120;                % Nernst potential of Ca2+ activated K-channel (mV)
 Gahp=100;               % Maximal conductance of the afterhyperpolarization K-channel (S/m^2)
 Vahp=-80;               % Nernst potential of the AHP-K channel (mV)
 Vm0 = -65;              % Resting potential (mV)
+minf = @(V) 1./(1+exp(-(V+37)./10));            % rest m-value [-]
+ainf = @(V) 1./(1+exp(-(V+57)./2));            % rest a-value [-]
+sinf = @(V) 1./(1+exp(-(V+35)./2));             % rest s-value [-]
 modelName = 'GPi';
 elseif MODEL == 12      % Globus pallidus externus neuron
 Gl=1;                   % Maximal conductance of the non-voltage dependent non-specific ion channels (S/m^2)
@@ -222,6 +227,9 @@ VCa=120;                % Nernst potential of Ca2+ activated K-channel (mV)
 Gahp=100;               % Maximal conductance of the afterhyperpolarization K-channel (S/m^2)
 Vahp=-80;               % Nernst potential of the AHP-K channel (mV)
 Vm0 = -65;              % Resting potential (mV)
+minf = @(V) 1./(1+exp(-(V+37)./10));            % rest m-value [-]
+ainf = @(V) 1./(1+exp(-(V+57)./2));            % rest a-value [-]
+sinf = @(V) 1./(1+exp(-(V+35)./2));             % rest s-value [-]
 modelName = 'GPe';
 elseif MODEL == 13      % Striatum medium spiny neuron
 Gl=1;                   % Maximal conductance of the non-voltage dependent non-specific ion channel (S/m^2)
