@@ -35,7 +35,7 @@ Veff2 = 1000*Q2/Cm0;
 
 Out1 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*RSI))*(Veff2-Veff1)-10^(-3)*(Gl*(Veff1-Vl)+Gna*minf(Veff1).^3.*h1.*(Veff1-Vna)+...
     Gk*(0.75*(1-h1)).^4.*(Veff1-Vk)+GT*pinf(Veff1).^2.*r1.*(Veff1-VT));
-cellfun(@(X) f1rt0.(['a_' X])(Q1)-f1rt0.(['apb_' X])(Q1)*rate1.(X),SONICgates)];
+cellfun(@(X) f1rtPa.(['a_' X])(Q1)-f1rtPa.(['apb_' X])(Q1)*rate1.(X),SONICgates)];
 
 Out2 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*(1/fBLS-1)*RSI))*(Veff1-Veff2)-10^(-3)*(Gl*(Veff2-Vl)+Gna*minf(Veff2).^3.*h2.*(Veff2-Vna)+...
     Gk*(0.75*(1-h2)).^4.*(Veff2-Vk)+GT*pinf(Veff2).^2.*r2.*(Veff2-VT));
