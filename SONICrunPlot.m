@@ -44,7 +44,7 @@ hold on;
 for iFreq = 1:length(USfreq{i})
 for iaBLS = 1:length(aBLS{i})
 SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq{i}(iFreq)),num2str(USdc),num2str(USprf),...
-'0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)));
+'0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)),'1');
 lt = load(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLS{i}(iaBLS)) ').mat']);
@@ -79,7 +79,7 @@ end
 cd(SONICpath);
 for iPa = 1:length(PaThRange)
 SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq{i}(iFreq)),num2str(USdc),num2str(USprf),...
-num2str(Pa2I(PaThRange(iPa))),'0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)));
+num2str(Pa2I(PaThRange(iPa))),'0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)),'1');
 end
 for iPa = 1:length(PaThRange)
 lt3 = load(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
@@ -126,7 +126,7 @@ cd(SONICpath);
 for iFreq = 1:length(USfreqRange)
     for iaBLS = 1:length(aBLSRange)
     SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreqRange(iFreq)),num2str(USdc),num2str(USprf),...
-    '0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLSRange(iaBLS)));
+    '0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLSRange(iaBLS)),'1');
     ltf = load(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLSRange(iaBLS)) ').mat']);
@@ -155,7 +155,7 @@ end
             appPa = ThreshPa(iFreq,iaBLS)+RelPaRange(iPaR);
             if pathNum == 1
             SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreqRange(iFreq)),num2str(USdc),num2str(USprf),...
-            num2str(Pa2I(appPa)),'0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLSRange(iaBLS)));
+            num2str(Pa2I(appPa)),'0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLSRange(iaBLS)),'1');
             elseif pathNum == 2
             funPESa(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreqRange(iFreq)),num2str(USdc),num2str(USprf),...
             num2str(Pa2I(appPa)),'0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLSRange(iaBLS)));
@@ -287,7 +287,7 @@ delete(['APtimes(' MODELstr{MODELnr{i}(imodel)} ')-Tsim=' num2str(Tsim) '-US(' n
 cd(SONICpath);
 
 SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf{i}(iprf)),...
-num2str(Pa2I(PaR)),'0','0','1','0','0','0',num2str(MODELnr{i}(imodel)),'0','0','0',num2str(aBLS));
+num2str(Pa2I(PaR)),'0','0','1','0','0','0',num2str(MODELnr{i}(imodel)),'0','0','0',num2str(aBLS),'1');
 
 lt3 = load(['Chargevt(' MODELstr{MODELnr{i}(imodel)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf{i}(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=(' ...
@@ -345,7 +345,7 @@ end
             for iMODEL = 1:length(MODELnrRange)
             if pathNum == 1
             SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdcRange(idc)),num2str(USprfRange(iprf)),...
-            num2str(Pa2I(PaR)),'0','0','1','0','0','0',num2str(MODELnrRange(iMODEL)),'0','0','0',num2str(aBLS));
+            num2str(Pa2I(PaR)),'0','0','1','0','0','0',num2str(MODELnrRange(iMODEL)),'0','0','0',num2str(aBLS),'1');
             elseif pathNum == 2
             funPESa(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdcRange(idc)),num2str(USprfRange(iprf)),...
             num2str(Pa2I(PaR)),'0','0','1','0','0','0',num2str(MODELnrRange(iMODEL)),'0','0','0',num2str(aBLS));
@@ -463,7 +463,7 @@ fprintf(['\n' repmat('.',1,numel(FR)) '\n\n']);
 parfor ii = 1:numel(FR)          
             fprintf('\b|\n');
             SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(mUSdc(ii)),num2str(mUSprf(ii)),...
-            num2str(Pa2I(mPaR(ii))),'0','0','1','0','0','0',num2str(mModelnr(ii)),'0','0','0',num2str(aBLS));
+            num2str(Pa2I(mPaR(ii))),'0','0','1','0','0','0',num2str(mModelnr(ii)),'0','0','0',num2str(aBLS),'1');
 end
 
 for iMODEL = 1:length(Modelnr)
@@ -533,7 +533,7 @@ for iMODEL = 1:2
     for icase = 1:2
     subplot(5,3,9*(iMODEL-1)+iprf+(icase-1)*3);
     SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc{iMODEL,iprf}(icase)),num2str(USprf(iprf)),...
-            num2str(Pa2I(PaR{iMODEL,iprf}(icase))),'0','0','1','0','0','0',num2str(Modelnr(iMODEL)),'0','0','0',num2str(aBLS));
+            num2str(Pa2I(PaR{iMODEL,iprf}(icase))),'0','0','1','0','0','0',num2str(Modelnr(iMODEL)),'0','0','0',num2str(aBLS),'1');
     
     ll = load(['Chargevt(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
          num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
@@ -610,7 +610,7 @@ for iMODEL = 1:length(ModelnrRange)
             reverseStr = repmat(sprintf('\b'), 1, length(msg));     
                 
             SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreqRange(iFreq)),num2str(USdcRange(idc)),num2str(USprf),...
-            '0','0','0','1','0','0','0',num2str(ModelnrRange(iMODEL)),'0',num2str(Pa2I(600e3)),'1',num2str(aBLSRange(iaBLS)));
+            '0','0','0','1','0','0','0',num2str(ModelnrRange(iMODEL)),'0',num2str(Pa2I(600e3)),'1',num2str(aBLSRange(iaBLS)),'1');
             ltf = load(['Thresh(' MODELstr{ModelnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdcRange(idc)) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
             num2str(aBLSRange(iaBLS)) ').mat']);
@@ -680,7 +680,7 @@ end
     reverseStr = repmat(sprintf('\b'), 1, length(msg));     
 
     SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),...
-    num2str(Pa2I(PaRRange(iPa))),'0','0','1','0','0','0',num2str(Modelnr),'0','0','0',num2str(aBLS));
+    num2str(Pa2I(PaRRange(iPa))),'0','0','1','0','0','0',num2str(Modelnr),'0','0','0',num2str(aBLS),'1');
 
     if subPlot == 1
     hold on;

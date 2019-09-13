@@ -1,5 +1,5 @@
 function SONICrun(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
-    ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS)
+    ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS)
 coder.extrinsic('nakeinterp1');
 % SONICrun is a speed-up version of funPES based on multi-scale
 % optimization with effective parameters. Based on:
@@ -30,6 +30,7 @@ ESpd = str2double(ESpd); ESdc = str2double(ESdc); ESprf = str2double(ESprf);
 ESipa = str2double(ESisppa); PLOT = str2double(PLOT); 
 USibegin = str2double(USibegin); USiend = str2double(USiend);
 SearchMode = str2double(SearchMode); aBLS = str2double(aBLS);
+fBLS = str2double(fBLS);
 
 SearchPrecision = 2; % If MODE=1, number of significant digits of the solution
 % of the titration algorithm
@@ -270,13 +271,18 @@ ESi = @ (t) ESipa*ESstep(t);  % [A/m^2]
 % -------------------------------------------------------------------------
 
 % 2. Important functions
-SONIC = load(['SONIC-' modelName '.mat']); 
+if fBLS < 1
+SONIC = load(['SONIC-' modelName '-xfs.mat']);
+else
+SONIC = load(['SONIC-' modelName '.mat']);
+end
 SONICtable = SONIC.SONICtable;
 % 2.1 SONIC functions (rate, Veff, Zeff, Cmeff, ngend)
 QmRange = SONICtable.QmRange; USPaRange = SONICtable.USPaRange; 
 USfreqRange = SONICtable.USfreqRange; aBLSRange = SONICtable.aBLSRange;
+fBLSRange = SONICtable.fBLSRange;
 
-Veff4D = SONICtable.Veff; Zeff4D = SONICtable.Zeff; Cmeff4D = SONICtable.Cmeff; ngend4D = SONICtable.ngend;
+Veff5D = SONICtable.Veff; Zeff5D = SONICtable.Zeff; Cmeff5D = SONICtable.Cmeff; ngend5D = SONICtable.ngend;
 
 % rate 4D sonic tables
 SONICfields = fieldnames(SONICtable);
@@ -286,22 +292,22 @@ rt = struct;
 for i = 1:length(SONICrates)
 rt.(SONICrates{i}) = min(SONICtable.(SONICrates{i}),maxRate);
 end
-f4Veff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Veff4D,Qm,USPa,USfreq,aBLS,'linear');
-f4Zeff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Zeff4D,Qm,USPa,USfreq,aBLS,'linear');
-f4Cmeff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Cmeff4D,Qm,USPa,USfreq,aBLS,'linear');
-f4ngend = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,ngend4D,Qm,USPa,USfreq,aBLS,'linear');
+f5Veff = @(Qm,USPa,USfreq,aBLS,fBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,fBLSRange,Veff5D,Qm,USPa,USfreq,aBLS,fBLS,'linear');
+f5Zeff = @(Qm,USPa,USfreq,aBLS,fBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,fBLSRange,Zeff5D,Qm,USPa,USfreq,aBLS,fBLS,'linear');
+f5Cmeff = @(Qm,USPa,USfreq,aBLS,fBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,fBLSRange,Cmeff5D,Qm,USPa,USfreq,aBLS,fBLS,'linear');
+f5ngend = @(Qm,USPa,USfreq,aBLS,fBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,fBLSRange,ngend5D,Qm,USPa,USfreq,aBLS,fBLS,'linear');
 
-f3Veff = @(Qm,USPa,USfreq) f4Veff(Qm,USPa,USfreq,a); 
-f3Zeff = @(Qm,USPa,USfreq) f4Zeff(Qm,USPa,USfreq,a); %#ok<*NASGU>
-f3Cmeff = @(Qm,USPa,USfreq) f4Cmeff(Qm,USPa,USfreq,a);
-f3ngend = @(Qm,USPa,USfreq) f4ngend(Qm,USPa,USfreq,a);
+f3Veff = @(Qm,USPa,USfreq) f5Veff(Qm,USPa,USfreq,a,fBLS); 
+f3Zeff = @(Qm,USPa,USfreq) f5Zeff(Qm,USPa,USfreq,a,fBLS); %#ok<*NASGU>
+f3Cmeff = @(Qm,USPa,USfreq) f5Cmeff(Qm,USPa,USfreq,a,fBLS);
+f3ngend = @(Qm,USPa,USfreq) f5ngend(Qm,USPa,USfreq,a,fBLS);
 
-f4rt = struct; f3rt = struct;
+f5rt = struct; f3rt = struct;
 VecVeff0 = zeros(1,length(QmRange)); VecVeffPa = zeros(1,length(QmRange));
 Vecrt0 = struct; VecrtPa = struct; f1rt0 = struct; f1rtPa = struct;
 for i = 1:length(SONICrates)
-f4rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,rt.(SONICrates{i}),Qm,USPa,USfreq,aBLS,'linear');   
-f3rt.(SONICrates{i}) = @(Qm,USPa,USfreq) f4rt.(SONICrates{i})(Qm,USPa,USfreq,a); 
+f5rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS,fBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,fBLSRange,rt.(SONICrates{i}),Qm,USPa,USfreq,aBLS,fBLS,'linear');   
+f3rt.(SONICrates{i}) = @(Qm,USPa,USfreq) f5rt.(SONICrates{i})(Qm,USPa,USfreq,a,fBLS); 
 end
 fVCa = @(cCai) 10^(3)*((Rg*Temp)/(2*Far))*log(cCae./cCai); % Nernst equation for Ca-potential [mV] (if not assumed constant)
 

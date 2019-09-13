@@ -133,6 +133,42 @@ for ifBLS = (1:length(fBLSRange))
     end
 end
 
+fn = fieldnames(SONICtable);  
+% If a dimension of the 5D table is a singleton, interpn will fail, because
+% it needs at least 2 points in each direction. 
+% To streamline calculations in SONICrun, we solve this by modifying the
+% tables by replicating the matrix in this dimension.
+if length(QmRange) == 1
+QmRange = horzcat(QmRange,QmRange(1)+eps(QmRange(1))); %#ok<*AGROW>
+for i = 1:length(fn)
+SONICtable.(fn{i}) = repmat(SONICtable.(fn{i}),[2 1 1 1 1]);
+end
+end
+if length(USPaRange) == 1
+USPaRange = horzcat(USPaRange,USPaRange(1)+eps(USPaRange(1)));
+for i = 1:length(fn)
+SONICtable.(fn{i}) = repmat(SONICtable.(fn{i}),[1 2 1 1 1]);
+end
+end
+if length(USfreqRange) == 1
+USfreqRange = horzcat(USfreqRange,USfreqRange(1)+eps(USfreqRange(1)));
+for i = 1:length(fn)
+SONICtable.(fn{i}) = repmat(SONICtable.(fn{i}),[1 1 2 1 1]);
+end
+end
+if length(aBLSRange) == 1
+aBLSRange = horzcat(aBLSRange,aBLSRange(1)+eps(aBLSRange(1)));
+for i = 1:length(fn)
+SONICtable.(fn{i}) = repmat(SONICtable.(fn{i}),[1 1 1 2 1]);
+end
+end
+if length(fBLSRange) == 1
+fBLSRange = horzcat(fBLSRange,fBLSRange(1)+eps(fBLSRange(1)));
+for i = 1:length(fn)
+SONICtable.(fn{i}) = repmat(SONICtable.(fn{i}),[1 1 1 1 2]);
+end
+end
+    
 SONICtable.QmRange = QmRange;
 SONICtable.aBLSRange = aBLSRange;
 SONICtable.USfreqRange = USfreqRange; 
