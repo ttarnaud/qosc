@@ -6,7 +6,7 @@ I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 debugSwitch = nan;            % Number: only run part of the program. nan : run everything 
-FigurePlot = 7;             % Number: plot this figure number. nan: plot everything
+FigurePlot = 10;             % Number: plot this figure number. nan: plot everything
 
 %% FIGURE 5 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 5
@@ -47,12 +47,12 @@ SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq{i}(iFreq))
 '0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLS{i}(iaBLS)),'1');
 lt = load(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS{i}(iaBLS)) ').mat']);
+    num2str(aBLS{i}(iaBLS)) ')-fBLS=(1).mat']);
 PaThreshSONIC = I2Pa(lt.IIpa);
 PaThRange = PaThreshSONIC+RelPa{i};
 delete(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS{i}(iaBLS)) ').mat']);
+    num2str(aBLS{i}(iaBLS)) ')-fBLS=(1).mat']);
 
 % NICE around threshold
 cd(NICEpath);
@@ -84,16 +84,16 @@ end
 for iPa = 1:length(PaThRange)
 lt3 = load(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaThRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS{i}(iaBLS)) ').mat']);
+    num2str(aBLS{i}(iaBLS)) ')-fBLS=(1).mat']);
 Qvt = lt3.saveChargeSample(:,2); timeline = lt3.saveChargeSample(:,1); 
 iSONICcolor = iSONICcolor+1;
 plot(10^3*timeline,Qvt,'linestyle','--','color',SONICcolors{iSONICcolor});
 delete(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaThRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS{i}(iaBLS)) ').mat']);
+    num2str(aBLS{i}(iaBLS)) ')-fBLS=(1).mat']);
 delete(['APtimes(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq{i}(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaThRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS{i}(iaBLS)) ').mat']);
+    num2str(aBLS{i}(iaBLS)) ')-fBLS=(1).mat']);
 end
 end
 end
@@ -129,11 +129,11 @@ for iFreq = 1:length(USfreqRange)
     '0','0','0','1','0','0','0',num2str(MODEL),'0','0','0',num2str(aBLSRange(iaBLS)),'1');
     ltf = load(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLSRange(iaBLS)) ').mat']);
+    num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);
     ThreshPa(iFreq,iaBLS) = I2Pa(ltf.IIpa);
     delete(['Thresh(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ... 
-    num2str(aBLSRange(iaBLS)) ').mat']);
+    num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);
     end
 end
 else
@@ -171,10 +171,10 @@ end
 
             ll = load(['APtimes(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(appPa)) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLSRange(iaBLS)) ').mat']);
+            num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);
             lr = load(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(appPa)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-            num2str(aBLSRange(iaBLS)) ').mat']);
+            num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);
             APtimes = ll.APtimes(ll.APtimes>=USps&ll.APtimes<=(USps+USpd)); %(s)
             
             if isempty(APtimes)
@@ -195,10 +195,10 @@ end
             
             delete(['APtimes(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(appPa)) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLSRange(iaBLS)) ').mat']);
+            num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);
             delete(['Chargevt(' MODELstr ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(appPa)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-            num2str(aBLSRange(iaBLS)) ').mat']);            
+            num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);            
             
             end
         end
@@ -221,6 +221,7 @@ hold on;
 plot(xaxis,LatencyNICE,'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2);
 plot(xaxis,LatencySONIC,'linestyle','--','color','k','marker','o');
 xlim([xaxis(1),xaxis(end)]);
+if (i == 2), set(gca,'xscale','log'); end
 ylabel('Latency [ms]');
 hold off;
 subplot(7,3,6+i);
@@ -228,6 +229,7 @@ hold on;
 plot(xaxis,FRNICE,'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2);
 plot(xaxis,FRSONIC,'linestyle','--','color','k','marker','o');
 xlim([xaxis(1),xaxis(end)]);
+if (i == 2), set(gca,'xscale','log'); end
 ylabel('Firing rate [Hz]');
 hold off;
 subplot(7,3,9+i);
@@ -235,6 +237,7 @@ hold on;
 plot(xaxis,spANICE,'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2);
 plot(xaxis,spASONIC,'linestyle','--','color','k','marker','o');
 xlim([xaxis(1),xaxis(end)]);
+if (i == 2), set(gca,'xscale','log'); end
 ylabel('Spike amp. [nC/cm^2]');
 xlabel(xlab);
 hold off;
@@ -291,24 +294,24 @@ num2str(Pa2I(PaR)),'0','0','1','0','0','0',num2str(MODELnr{i}(imodel)),'0','0','
 
 lt3 = load(['Chargevt(' MODELstr{MODELnr{i}(imodel)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf{i}(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS) ').mat']);
+    num2str(aBLS) ')-fBLS=(1).mat']);
 Qvt = lt3.saveChargeSample(:,2); timeline = lt3.saveChargeSample(:,1); 
 iSONICcolor = iSONICcolor+1;
 plot(10^3*timeline,Qvt,'linestyle','--','color',SONICcolors{iSONICcolor});
 delete(['Chargevt(' MODELstr{MODELnr{i}(imodel)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf{i}(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS) ').mat']);
+    num2str(aBLS) ')-fBLS=(1).mat']);
 delete(['APtimes(' MODELstr{MODELnr{i}(imodel)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf{i}(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-    num2str(aBLS) ').mat']);
+    num2str(aBLS) ')-fBLS=(1).mat']);
 end
 end
 legend(h,legendStr{i});
-end
 if (i==1)
     ylabel('Q [nC/cm^2]');
 end
 xlabel('Time [ms]');
+end
 end
 
 %Fig. 1(d-e) bottom
@@ -337,8 +340,10 @@ spA =  zeros(2,length(USdcRange),length(USprfRange),length(MODELnrRange));      
 for pathNum = 1:2
 if pathNum == 1
     cd(SONICpath);
+    addStr = '-fBLS=(1)';
 elseif pathNum == 2
     cd(NICEpath);
+    addStr = '';
 end
     for idc = 1:length(USdcRange)
         for iprf = 1:length(USprfRange)
@@ -359,10 +364,10 @@ end
             for iMODEL = 1:length(MODELnrRange)
             ll = load(['APtimes(' MODELstr{MODELnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdcRange(idc)) ',' num2str(USprfRange(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLS) ').mat']);
+            num2str(aBLS) ')' addStr '.mat']);
             lr = load(['Chargevt(' MODELstr{MODELnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdcRange(idc)) ',' num2str(USprfRange(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-            num2str(aBLS) ').mat']);
+            num2str(aBLS) ')' addStr '.mat']);
             APtimes = ll.APtimes(ll.APtimes>=USps&ll.APtimes<=(USps+USpd)); %(s)
             
             if isempty(APtimes)
@@ -383,10 +388,10 @@ end
             
             delete(['APtimes(' MODELstr{MODELnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdcRange(idc)) ',' num2str(USprfRange(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLS) ').mat']);
+            num2str(aBLS) ')' addStr '.mat']);
             delete(['Chargevt(' MODELstr{MODELnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdcRange(idc)) ',' num2str(USprfRange(iprf)) ',' num2str(Pa2I(PaR)) ')-ES(0,0,1,0,0)-aBLS=(' ...
-            num2str(aBLS) ').mat']);            
+            num2str(aBLS) ')' addStr '.mat']);            
             
             end
         end
@@ -472,17 +477,17 @@ for iMODEL = 1:length(Modelnr)
             for iPa = 1:length(PaR) 
             ll = load(['APtimes(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdc(idc)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLS) ').mat']);
+            num2str(aBLS) ')-fBLS=(1).mat']);
             APtimes = ll.APtimes(ll.APtimes>=USps&ll.APtimes<=(USps+USpd)); %(s)
             
             FR(iMODEL,iprf,idc,iPa) = length(APtimes)./(USpd);        % (Hz)
             
             delete(['APtimes(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdc(idc)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLS) ').mat']);   
+            num2str(aBLS) ')-fBLS=(1).mat']);   
             delete(['Chargevt(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreq) ',' num2str(USdc(idc)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-            num2str(aBLS) ').mat']); 
+            num2str(aBLS) ')-fBLS=(1).mat']); 
             end
         end
     end
@@ -503,7 +508,6 @@ for iMODEL = 1:length(Modelnr)
         colormap(gca,'winter');
         shading flat
     end
-end
 end
 % (b) individual sims
 SONICRS = load('SONIC-RS.mat'); SONICLTS = load('SONIC-LTS.mat');
@@ -537,7 +541,7 @@ for iMODEL = 1:2
     
     ll = load(['Chargevt(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
          num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
-         num2str(aBLS) ').mat']); 
+         num2str(aBLS) ')-fBLS=(1).mat']); 
     
     USprp = (1/USprf(iprf));      % Pulse repetition period (s)
     USstep = @(t) double(mod(t-USps,USprp)<=USdc{iMODEL,iprf}(icase)*USprp).*double(t>=USps&t<=USpd+USps);
@@ -564,12 +568,13 @@ for iMODEL = 1:2
      
     delete(['APtimes(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
-    num2str(aBLS) ').mat']);   
+    num2str(aBLS) ')-fBLS=(1).mat']);   
     delete(['Chargevt(' MODELstr{Modelnr(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc{iMODEL,iprf}(icase)) ',' num2str(USprf(iprf)) ',' num2str(Pa2I(PaR{iMODEL,iprf}(icase))) ')-ES(0,0,1,0,0)-aBLS=('...
-    num2str(aBLS) ').mat']);
+    num2str(aBLS) ')-fBLS=(1).mat']);
     end 
     end
+end
 end
 
 %% FIGURE 8 Lemaire et al. (2018)
@@ -613,11 +618,11 @@ for iMODEL = 1:length(ModelnrRange)
             '0','0','0','1','0','0','0',num2str(ModelnrRange(iMODEL)),'0',num2str(Pa2I(600e3)),'1',num2str(aBLSRange(iaBLS)),'1');
             ltf = load(['Thresh(' MODELstr{ModelnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdcRange(idc)) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ...
-            num2str(aBLSRange(iaBLS)) ').mat']);
+            num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);
             ThreshPa(iMODEL,iaBLS,iFreq,idc) = I2Pa(ltf.IIpa);
             delete(['Thresh(' MODELstr{ModelnrRange(iMODEL)} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
             num2str(USfreqRange(iFreq)) ',' num2str(USdcRange(idc)) ',' num2str(USprf) ',' num2str(0) ')-ES(0,0,1,0,0)-aBLS=(' ... 
-            num2str(aBLSRange(iaBLS)) ').mat']);            
+            num2str(aBLSRange(iaBLS)) ')-fBLS=(1).mat']);            
             end
         end
     end
@@ -642,7 +647,7 @@ end
 end
 end
 
-%% FIGURE 9 Lemaire et al. (2018)
+%% FIGURE 9 Lemaire et al. (2019)
 if isnan(FigurePlot) || FigurePlot == 9
 Tsim = 2.5;     % (s)
 USpd = 1;   % (s)
@@ -686,7 +691,7 @@ end
     hold on;
     ll = load(['APtimes(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-    num2str(aBLS) ').mat']);
+    num2str(aBLS) ')-fBLS=(1).mat']);
     APtimes = ll.APtimes(ll.APtimes>=USps&ll.APtimes<=(USps+USpd)); %(s)
     FR = 1./diff(APtimes);        % (Hz)
     plot(10^3*APtimes(1:end-1),FR,'color',redCmap(1+round((size(redCmap,1)-1)*(PaRRange(iPa)/PaRRange(end))),:));
@@ -698,7 +703,7 @@ end
     else
     lr = load(['Chargevt(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-    num2str(aBLS) ').mat']);
+    num2str(aBLS) ')-fBLS=(1).mat']);
     
     Qvt = lr.saveChargeSample(:,2); timeline = lr.saveChargeSample(:,1); 
     plot(timeline*10^3,Qvt*10^5);
@@ -710,10 +715,10 @@ end
     end
     delete(['APtimes(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-    num2str(aBLS) ').mat']);   
+    num2str(aBLS) ')-fBLS=(1).mat']);   
     delete(['Chargevt(' MODELstr{Modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' ...
     num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(Pa2I(PaRRange(iPa))) ')-ES(0,0,1,0,0)-aBLS=('...
-    num2str(aBLS) ').mat']); 
+    num2str(aBLS) ')-fBLS=(1).mat']); 
     end
 end
 hf_main = figure(3);
@@ -725,4 +730,60 @@ set(hp_sub(idx),'Position',[(idx-1)/npanels,0,1/npanels,1]);
 close(figure(idx));
 end
 set(gcf,'color','w');
+end
+
+%% Figure 10 Lemaire et al. (2019)
+if isnan(FigurePlot) || FigurePlot == 10
+% Fig. 10 (a)
+Tsim = 0.3; % (s)
+USps = 0.1; % (s)
+USpd = 0.1; % (s)
+USfreq = 500e3; %(Hz)
+USPa = 50e3; % (Pa)
+USdc = 1; USprf = 0; % (-,Hz)
+modelnr = 1;
+aBLS = 32e-9; % (m)
+fBLS = 0.5; % (-)
+SONICrun_nanoMC(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),num2str(Pa2I(USPa)),'0','0','1','0','0','1',num2str(modelnr),'0','0','0',num2str(aBLS),num2str(fBLS));
+
+
+% Fig. 10 (b)
+Tsim = 2;   % (s)
+USps = 1;   % (s)
+USps = 0.5; % (s)
+
+fBLSRange = [0.01,(0.05:0.05:0.95),0.99];  % (-)
+
+ThreshPa = zeros(length(fBLSRange),2);
+
+for ifBLS=1:length(fBLSRange)
+SONICrun_nanoMC(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)));
+
+LoadStr=['nanoMC-Thresh(RS)-Tsim=' num2str(Tsim) '-US(' num2str(USps) ','...
+    num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',0)-ES(0,0,1,0,0)-aBLS=(' ...
+    num2str(aBLS) ')-fBLS=(' num2str(fBLSRange(ifBLS)) ').mat']; 
+ll = load(LoadStr);
+ThreshPa(ifBLS,1) = I2Pa(ll.IIpa);
+delete(LoadStr);
+
+SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)));
+
+LoadStr2=['Thresh(RS)-Tsim=' num2str(Tsim) '-US(' num2str(USps) ','...
+    num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',0)-ES(0,0,1,0,0)-aBLS=(' ...
+    num2str(aBLS) ')-fBLS=(' num2str(fBLSRange(ifBLS)) ').mat']; 
+lr = load(LoadStr2);
+ThreshPa(ifBLS,2) = I2Pa(lr.IIpa);
+delete(LoadStr2);
+end
+figure;
+hold on;
+plot(100*fBLSRange,ThreshPa(:,1)*10^(-3),'linestyle','-','color','b','linewidth',2);
+plot(100*fBLSRange,ThreshPa(:,2)*10^(-3),'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2);
+xlabel('Sonophore coverage (%)');
+ylabel('Amplitude (kPa)');
+hold off;
+ylim([10,600]);
+set(gca,'yscale','log');
+set(gcf,'color','w');
+
 end

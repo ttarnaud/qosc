@@ -44,7 +44,7 @@ MODEL = str2double(model);
 % STN is based on Otsuka et al.
 % Str-MSN is based on McCarthy et al.
 
-DISPLAY = 0;
+DISPLAY = 1;
 % Display level. Note: higher display level will give more runtime information but will slow the program 
 % DISPLAY = 0 -> No information displayed (use this option for HPC simulations)
 % DISPLAY = 1 -> Display progress based on update nr. alone
@@ -317,7 +317,7 @@ Qm0 = Cm0*(10^(-3)*Vm0);            % Approximation of rest charge
 Y0 = zeros(round(length(SONICrates)/2)+1,1);
 Y0(1) = Qm0;
 for i = 1:length(SONICgates)
-Y0(i+1) = f3rt.(['a_' SONICgates{i}])(Qm0,0,1e6)./f3rt.(['apb_' SONICgates{i}])(Qm0,0,1e6);      
+Y0(i+1) = f3rt.(['a_' SONICgates{i}])(Qm0,0,0.5e6)./f3rt.(['apb_' SONICgates{i}])(Qm0,0,0.5e6);      
 end
 
 if MODEL == 4 || MODEL == 5
@@ -464,13 +464,13 @@ if MODE == 2
 SaveStr=['APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];
 save(SaveStr,'APtimes');
 
 SaveStr2=['Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];
 saveChargeSample = [TvaluesY, 10^5*Y(:,1)];
 save(SaveStr2,'saveChargeSample');
 break;
@@ -495,7 +495,7 @@ disp(' '); %#ok<*UNRCH>
 Checkpoint=['CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')'];
+        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')'];
 disp(Checkpoint);   
 fprintf('\n'); 
 end
@@ -505,7 +505,7 @@ if MODE == 1
 SaveStr=['Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
     USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ').mat'];    
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];    
 save(SaveStr,'IIpa');
 end
 TTime = toc;

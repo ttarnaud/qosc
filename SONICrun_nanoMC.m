@@ -45,7 +45,7 @@ MODEL = str2double(model);
 % STN is based on Otsuka et al.
 % Str-MSN is based on McCarthy et al.
 
-DISPLAY = 1;
+DISPLAY = 0;
 % Display level. Note: higher display level will give more runtime information but will slow the program 
 % DISPLAY = 0 -> No information displayed (use this option for HPC simulations)
 % DISPLAY = 1 -> Display progress based on update nr. alone
@@ -436,7 +436,8 @@ SONICtable = SONIC.SONICtable;
 QmRange = SONICtable.QmRange; USPaRange = SONICtable.USPaRange; 
 USfreqRange = SONICtable.USfreqRange; aBLSRange = SONICtable.aBLSRange;
 
-Veff4D = SONICtable.Veff; Zeff4D = SONICtable.Zeff; Cmeff4D = SONICtable.Cmeff; ngend4D = SONICtable.ngend;
+Veff4D = SONICtable.Veff(:,:,:,:,1); Zeff4D = SONICtable.Zeff(:,:,:,:,1); 
+Cmeff4D = SONICtable.Cmeff(:,:,:,:,1); ngend4D = SONICtable.ngend(:,:,:,:,:,1);       % Note: Compartment 1 has full sonophore coverage -> don't use SONIC-xfs tables!
 
 % rate 4D sonic tables
 SONICfields = fieldnames(SONICtable);
@@ -445,6 +446,7 @@ SONICgates = cellfun(@(X) X(3:end),SONICrates(cellfun(@(X) contains(X,'a_'),SONI
 rt = struct;
 for i = 1:length(SONICrates)
 rt.(SONICrates{i}) = min(SONICtable.(SONICrates{i}),maxRate);
+rt.(SONICrates{i}) = rt.(SONICrates{i})(:,:,:,:,1);
 end
 f4Veff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Veff4D,Qm,USPa,USfreq,aBLS,'linear');
 f4Zeff = @(Qm,USPa,USfreq,aBLS) interpn(QmRange,USPaRange,USfreqRange,aBLSRange,Zeff4D,Qm,USPa,USfreq,aBLS,'linear');
