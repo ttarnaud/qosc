@@ -413,27 +413,28 @@ end
 
 subplot(7,3,15+i);
 hold on;
-plot(xaxis,LatencyNICE(:),'linestyle','-','color',NICEcolor(iNICEcolor),'linewidth',2);
-plot(xaxis,LatencySONIC(:),'linestyle','--','color',SONICcolor(iSONICcolor),'marker','o');
+plot(xaxis,LatencyNICE(:),'linestyle','-','color',NICEcolor{iNICEcolor},'linewidth',2);
+plot(xaxis,LatencySONIC(:),'linestyle','--','color',SONICcolor{iSONICcolor},'marker','o');
 xlim([xaxis(1),xaxis(end)]);
 ylabel('Latency [ms]');
 hold off;
 subplot(7,3,18+i);
 hold on;
-plot(xaxis,FRNICE(:),'linestyle','-','color',NICEcolor(iNICEcolor),'linewidth',2);
-plot(xaxis,FRSONIC(:),'linestyle','--','color',SONICcolor(iSONICcolor),'marker','o');
+plot(xaxis,FRNICE(:),'linestyle','-','color',NICEcolor{iNICEcolor},'linewidth',2);
+plot(xaxis,FRSONIC(:),'linestyle','--','color',SONICcolor{iSONICcolor},'marker','o');
 xlim([xaxis(1),xaxis(end)]);
 ylabel('Firing rate [Hz]');
 hold off;
 % subplot(7,3,21+i);
 % hold on;
-% plot(xaxis,spANICE(:),'linestyle','-','color',NICEcolor(iNICEcolor),'linewidth',2);
-% plot(xaxis,spASONIC(:),'linestyle','--','color',SONICcolor(iSONICcolor),'marker','o');
+% plot(xaxis,spANICE(:),'linestyle','-','color',NICEcolor{iNICEcolor},'linewidth',2);
+% plot(xaxis,spASONIC(:),'linestyle','--','color',SONICcolor{iSONICcolor},'marker','o');
 % xlim([xaxis(1),xaxis(end)]);
 % ylabel('Spike amp. [nC/cm^2]');
 % xlabel(xlab);
 % hold off;
 end
+xlabel(xlab);
 
 end
 end

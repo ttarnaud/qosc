@@ -51,7 +51,7 @@ DISPLAY = 0;
 % DISPLAY = 1 -> Display progress based on update nr. alone
 
 % Discretisation parameters
-dt = 50e-6;            % Discretisation time (s)
+dt = min(50e-6,0.1*min(USdc/USprf,ESdc/ESprf));            % Discretisation time (s)
 atol = 1e-6; rtol = 1e-3; % absolute and relative VSVO-tolerances
 maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,apb). Set to 'inf' if no maxRate
 % Physically protein gate opening/closing will have a minimal time delay, irrespective of voltage (~ 1/maxRate). 
