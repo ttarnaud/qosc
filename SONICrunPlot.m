@@ -6,7 +6,7 @@ I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 debugSwitch = nan;            % Number: only run part of the program. nan : run everything 
-FigurePlot = 10;             % Number: plot this figure number. nan: plot everything
+FigurePlot = 5;             % Number: plot this figure number. nan: plot everything
 
 %% FIGURE 5 Lemaire et al. (2018)
 if isnan(FigurePlot) || FigurePlot == 5
@@ -750,24 +750,23 @@ SONICrun_nanoMC(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),nu
 
 % Fig. 10 (b)
 Tsim = 2;   % (s)
-USps = 1;   % (s)
+USpd = 1;   % (s)
 USps = 0.5; % (s)
 
 fBLSRange = [0.01,(0.05:0.05:0.95),0.99];  % (-)
-
 ThreshPa = zeros(length(fBLSRange),2);
 
-for ifBLS=1:length(fBLSRange)
+parfor ifBLS=1:length(fBLSRange)
 SONICrun_nanoMC(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)));
-
+SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)));
+end
+for ifBLS=1:length(fBLSRange)
 LoadStr=['nanoMC-Thresh(RS)-Tsim=' num2str(Tsim) '-US(' num2str(USps) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',0)-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLS) ')-fBLS=(' num2str(fBLSRange(ifBLS)) ').mat']; 
 ll = load(LoadStr);
 ThreshPa(ifBLS,1) = I2Pa(ll.IIpa);
 delete(LoadStr);
-
-SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)));
 
 LoadStr2=['Thresh(RS)-Tsim=' num2str(Tsim) '-US(' num2str(USps) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',0)-ES(0,0,1,0,0)-aBLS=(' ...
@@ -786,5 +785,4 @@ hold off;
 ylim([10,600]);
 set(gca,'yscale','log');
 set(gcf,'color','w');
-
 end
