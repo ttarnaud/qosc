@@ -753,7 +753,7 @@ Tsim = 2;   % (s)
 USpd = 1;   % (s)
 USps = 0.5; % (s)
 
-fBLSRange = [0.01,(0.05:0.05:0.95),0.99];  % (-)
+fBLSRange = (0.01:0.01:0.99);  % (-)
 ThreshPa = zeros(length(fBLSRange),2);
 
 parfor ifBLS=1:length(fBLSRange)
