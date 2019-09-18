@@ -1,10 +1,11 @@
 function SONICrun(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
     ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
-proteinMode = '0'; threshMode = '0';
+proteinMode = '0'; threshMode = '0'; modeStr ='';
 if length(varargin) > 2 , disp('Warning: extra input parameters will be ignored'); end
-if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2}; end
-if length(varargin) == 1, proteinMode = varargin{1}; end
+if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2}; 
+    modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
+if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=(' proteinMode ')']; end
 % SONICrun is a speed-up version of funPES based on multi-scale
 % optimization with effective parameters. Based on:
 % SONIC (Lemaire et al., 2018), Piezoelectric solver (see Plaksin et al.,2014; Plaksin et al.,2016;
@@ -494,13 +495,13 @@ if MODE == 2
 SaveStr=['APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 save(SaveStr,'APtimes');
 
 SaveStr2=['Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 saveChargeSample = [TvaluesY, 10^5*Y(:,1)];
 save(SaveStr2,'saveChargeSample');
 break;
@@ -525,7 +526,7 @@ disp(' '); %#ok<*UNRCH>
 Checkpoint=['CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')'];
+        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr];
 disp(Checkpoint);   
 fprintf('\n'); 
 end
@@ -535,7 +536,7 @@ if MODE == 1
 SaveStr=['Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
     USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];    
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];    
 save(SaveStr,'IIpa');
 end
 TTime = toc;

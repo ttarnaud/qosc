@@ -1,10 +1,11 @@
 function SONICrun_nanoMC(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
     ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
-proteinMode = '0'; threshMode = '0';
+proteinMode = '0'; threshMode = '0'; modeStr = '';
 if length(varargin) > 2 , disp('Warning: extra input parameters will be ignored'); end
-if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2}; end
-if length(varargin) == 1, proteinMode = varargin{1}; end
+if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2};
+ modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
+if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=(' proteinMode ')']; end
 % SONICrun_nanoMC is a MultiCompartmental nanoscale model (see Fig. 3 and
 % Fig. 10 in Lemaire et al.). Based on SONICrun, which is a speed-up version 
 % of funPES based on multi-scale optimization with effective parameters. Based on:
@@ -654,13 +655,13 @@ if MODE == 2
 SaveStr=['nanoMC-APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 save(SaveStr,'APtimes');
 
 SaveStr2=['nanoMC-Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 saveChargeSample = [TvaluesY, 10^5*Y1(:,1),10^5*Y2(:,1)];
 save(SaveStr2,'saveChargeSample');
 break;
@@ -685,7 +686,7 @@ disp(' '); %#ok<*UNRCH>
 Checkpoint=['nanoMC-CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')'];
+        num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr];
 disp(Checkpoint);   
 fprintf('\n'); 
 end
@@ -695,7 +696,7 @@ if MODE == 1
 SaveStr=['nanoMC-Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
     USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
-        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ').mat'];    
+        num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];    
 save(SaveStr,'IIpa');
 end
 TTime = toc;
