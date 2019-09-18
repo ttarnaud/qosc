@@ -44,7 +44,7 @@ MODEL = str2double(model);
 % STN is based on Otsuka et al.
 % Str-MSN is based on McCarthy et al.
 
-DISPLAY = 1;
+DISPLAY = 0;
 % Display level. Note: higher display level will give more runtime information but will slow the program 
 % DISPLAY = 0 -> No information displayed (use this option for HPC simulations)
 % DISPLAY = 1 -> Display progress based on update nr. alone
