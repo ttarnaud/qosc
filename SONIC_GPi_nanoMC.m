@@ -1,5 +1,5 @@
 function Out = SONIC_GPi_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,Q1,h1,n1,r1,CA1,Q2,h2,n2,r2,CA2,Gna,Vna,Gk,Vk,Gl,Vl,...
-    GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,Cm0,aBLS,fBLS,RSI)
+    GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,Cm0,aBLS,fBLS,RSI,proteinMode)
 if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>
@@ -7,6 +7,12 @@ msg = sprintf('Progress: %3.1f', Progress);
 fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
+switch proteinMode
+    case 0, xP = 1; xl = 1;             % (ratio of protein coverage (electrolytes, leak) in the BLS compartment)
+    case 1, xP = 0; xl = 1;
+    case 2, xP = 0; xl = 0;
+end
+
 rate1 = struct; rate2 = struct;
 n1 = n1*(n1<=1&n1>=0)+(n1>1); n2 = n2*(n2<=1&n2>=0)+(n2>1);
 h1 = h1*(h1<=1&h1>=0)+(h1>1); h2 = h2*(h2<=1&h2>=0)+(h2>1);
@@ -18,9 +24,9 @@ if USPaT(t) == 0
 Veff1 = f1Veff0(Q1);
 Veff2 = 1000*Q2/Cm0;
 
-Out1 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*RSI))*(Veff2-Veff1)-10^(-3)*(Gl*(Veff1-Vl)+Gna*minf(Veff1).^3.*h1.*(Veff1-Vna)+...
-   Gk*n1.^4.*(Veff1-Vk)+GT*ainf(Veff1).^3.*r1.*(Veff1-VT)+...
-   GCa.*sinf(Veff1).^2.*(Veff1-VCa)+Gahp*(Veff1-Vk).*(CA1./(CA1+10)));
+Out1 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*RSI))*(Veff2-Veff1)-10^(-3)*(xl*Gl*(Veff1-Vl)+xP*Gna*minf(Veff1).^3.*h1.*(Veff1-Vna)+...
+   xP*Gk*n1.^4.*(Veff1-Vk)+xP*GT*ainf(Veff1).^3.*r1.*(Veff1-VT)+...
+   xP*GCa.*sinf(Veff1).^2.*(Veff1-VCa)+xP*Gahp*(Veff1-Vk).*(CA1./(CA1+10)));
 cellfun(@(X) f1rt0.(['a_' X])(Q1)-f1rt0.(['apb_' X])(Q1)*rate1.(X),SONICgates)
 -10^(-4)*(0.1*GT*ainf(Veff1).^3.*r1.*(Veff1-VT)+0.1*GCa.*sinf(Veff1).^2.*(Veff1-VCa)+15*1000*CA1)];
 Out2 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*(1/fBLS-1)*RSI))*(Veff1-Veff2)-10^(-3)*(Gl*(Veff2-Vl)+Gna*minf(Veff2).^3.*h2.*(Veff2-Vna)+...
@@ -34,9 +40,9 @@ else
 Veff1 = f1VeffPa(Q1);
 Veff2 = 1000*Q2/Cm0;
 
-Out1 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*RSI))*(Veff2-Veff1)-10^(-3)*(Gl*(Veff1-Vl)+Gna*minf(Veff1).^3.*h1.*(Veff1-Vna)+...
-   Gk*n1.^4.*(Veff1-Vk)+GT*ainf(Veff1).^3.*r1.*(Veff1-VT)+...
-   GCa.*sinf(Veff1).^2.*(Veff1-VCa)+Gahp*(Veff1-Vk).*(CA1./(CA1+10)));
+Out1 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*RSI))*(Veff2-Veff1)-10^(-3)*(xl*Gl*(Veff1-Vl)+xP*Gna*minf(Veff1).^3.*h1.*(Veff1-Vna)+...
+   xP*Gk*n1.^4.*(Veff1-Vk)+xP*GT*ainf(Veff1).^3.*r1.*(Veff1-VT)+...
+   xP*GCa.*sinf(Veff1).^2.*(Veff1-VCa)+xP*Gahp*(Veff1-Vk).*(CA1./(CA1+10)));
 cellfun(@(X) f1rtPa.(['a_' X])(Q1)-f1rtPa.(['apb_' X])(Q1)*rate1.(X),SONICgates)
 -10^(-4)*(0.1*GT*ainf(Veff1).^3.*r1.*(Veff1-VT)+0.1*GCa.*sinf(Veff1).^2.*(Veff1-VCa)+15*1000*CA1)];
 Out2 = [ESi(t)+10^(-3)*(1/(pi*aBLS^2*(1/fBLS-1)*RSI))*(Veff1-Veff2)-10^(-3)*(Gl*(Veff2-Vl)+Gna*minf(Veff2).^3.*h2.*(Veff2-Vna)+...

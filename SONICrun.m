@@ -1,6 +1,10 @@
 function SONICrun(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
-    ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS)
+    ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
+proteinMode = '0'; threshMode = '0';
+if length(varargin) > 2 , disp('Warning: extra input parameters will be ignored'); end
+if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2}; end
+if length(varargin) == 1, proteinMode = varargin{1}; end
 % SONICrun is a speed-up version of funPES based on multi-scale
 % optimization with effective parameters. Based on:
 % SONIC (Lemaire et al., 2018), Piezoelectric solver (see Plaksin et al.,2014; Plaksin et al.,2016;
@@ -20,6 +24,11 @@ coder.extrinsic('nakeinterp1');
 % search-range=[USibegin,USiend] for the intensity threshold 
 % SearchMode = 0 indicates that ~any(~search-range) = 0,
 % while SearchMode = 1 handles the case ~any(~search-range) = 1.
+% ProteinMode: coverage of proteins: (mode 0: full coverage; mode
+% 1: partial coverage, leak current has full coverage; mode 2: all gates partial
+% coverage including leak current)
+% threshMode: (0: neuron excitation during Tsim for threshold
+% determination; 1: only neuron excitation during stimulus duration).
 % 3. Units: SI-units are used, except for the membrane voltage [mV].
 % -> All input variables are strings, because this works more fluently
 % -PBS files for HPC simulations:
@@ -30,7 +39,7 @@ ESpd = str2double(ESpd); ESdc = str2double(ESdc); ESprf = str2double(ESprf);
 ESipa = str2double(ESisppa); PLOT = str2double(PLOT); 
 USibegin = str2double(USibegin); USiend = str2double(USiend);
 SearchMode = str2double(SearchMode); aBLS = str2double(aBLS);
-fBLS = str2double(fBLS);
+fBLS = str2double(fBLS); proteinMode = str2double(proteinMode); threshMode = str2double(threshMode);
 
 SearchPrecision = 2; % If MODE=1, number of significant digits of the solution
 % of the titration algorithm
