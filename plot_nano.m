@@ -26,7 +26,7 @@ fBLSRange = (0.01:0.01:0.99);  % (-)
 fBLSRange = (0.05:0.1:0.95); fprintf('debug mode');
 
 ThreshPa = zeros(length(fBLSRange),6);
-threshMode = 0;
+threshMode = 1;
 
 cd(SONICpath);
 parfor ifBLS=1:length(fBLSRange)

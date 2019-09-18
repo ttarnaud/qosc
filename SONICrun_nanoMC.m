@@ -637,7 +637,7 @@ clear APindex1; % Save all memory that can be saved...
 if (threshMode == 0)
 NeuronActivated1 = ~isempty(APtimes1); % Bool: 1 if neuron is activated
 elseif (threshMode == 1)
-NeuronActivated1 = ~isempty(APtimes1(APtimes1>=USps&&APtimes1<=(USps+USpd)));
+NeuronActivated1 = ~isempty(APtimes1(APtimes1>=USpstart&&APtimes1<=(USpstart+USpd)));
 end
 APindex2 = (10^5*Y2(:,1)>Qthresh)&(circshift(10^5*Y2(:,1),1,1)<Qthresh);
 APindex2(1) = 0; % Remove circshift artifact
@@ -646,7 +646,7 @@ clear APindex2; % Save all memory that can be saved...
 if (threshMode == 0)
 NeuronActivated2 = ~isempty(APtimes2); % Bool: 1 if neuron is activated
 elseif (threshMode == 1)
-NeuronActivated2 = ~isempty(APtimes2(APtimes2>=USps&&APtimes2<=(USps+USpd)));
+NeuronActivated2 = ~isempty(APtimes2(APtimes2>=USpstart&&APtimes2<=(USpstart+USpd)));
 end
 NeuronActivated = NeuronActivated1||NeuronActivated2;
 APtimes = {APtimes1;APtimes2};
