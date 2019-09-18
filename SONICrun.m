@@ -489,7 +489,7 @@ clear APindex; % Save all memory that can be saved...
 if (threshMode == 0)
 NeuronActivated = ~isempty(APtimes); % Bool: 1 if neuron is activated
 elseif (threshMode == 1)
-NeuronActivated = ~isempty(APtimes(APtimes>=USpstart&&APtimes<=(USpstart+USpd)));
+NeuronActivated = ~isempty(APtimes(APtimes>=USpstart&APtimes<=(USpstart+USpd)));
 end
 if MODE == 2
 SaveStr=['APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
