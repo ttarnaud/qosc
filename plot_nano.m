@@ -1,5 +1,10 @@
 % Script will calculate and plot different nanoscale models of the BLS
-
+c = 1515;				% Speed of sound surrounding medium (m/s)
+rhol = 1028;			% Density surrounding medium (kg/m^3)
+Pa2I = @(Pa) Pa.^2/(2*rhol*c);
+I2Pa = @(I) sqrt(2*rhol*c*I);
+NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
+SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 % Model 1: (SONICrun_nanoMC,proteinMode=0) Multi-compartmental SONIC model: protein channels full coverage
 % Model 2: (SONICrun,proteinMode=0) Point-like SONIC model: protein channels full coverage
 % Model 3: (SONICrun_nanoMC,proteinMode=1) Multi-compartmental SONIC model: no protein
@@ -12,6 +17,10 @@
 Tsim = 2;   % (s)
 USpd = 1;   % (s)
 USps = 0.5; % (s)
+USfreq = 500e3; % (Hz)
+USdc = 1; USprf = 0; % (-,Hz)
+aBLS = 32e-9;       % (m)
+modelnr = 1;
 
 fBLSRange = (0.01:0.01:0.99);  % (-)
 fBLSRange = (0.05:0.1:0.95); fprintf('debug mode');
@@ -19,6 +28,7 @@ fBLSRange = (0.05:0.1:0.95); fprintf('debug mode');
 ThreshPa = zeros(length(fBLSRange),6);
 threshMode = 0;
 
+cd(SONICpath);
 parfor ifBLS=1:length(fBLSRange)
 proteinMode = 0;    
 SONICrun_nanoMC(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)),num2str(proteinMode),num2str(threshMode));
@@ -74,4 +84,4 @@ set(gca,'yscale','log');
 set(gcf,'color','w');
 legend({'Nanoscale multicompartmental SONIC: full protein coverage';'Nanoscale multicompartmental SONIC: partial protein coverage'; ...
     'Point-like SONIC: full protein coverage'; 'Point-like SONIC partial protein coverage'});
-title('Threshold (' num2str(threshMode+1) ') - BLS coverage'); 
+title(['Threshold (' num2str(threshMode+1) ') - BLS coverage']); 
