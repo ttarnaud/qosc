@@ -396,6 +396,23 @@ f1Veff0 = @(Q) nakeinterp1(QmRange',VecVeff0,Q);
 f1VeffPa = @(Q) nakeinterp1(QmRange',VecVeffPa,Q);
 
 OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
+
+% Partial coverage of protein gates / leakage currents
+if proteinMode == 1 || proteinMode == 2
+if exist('Gna','var'), Gna = (1-fBLS)*Gna; end
+if exist('Gk','var'), Gk = (1-fBLS)*Gk; end
+if exist('Gm','var'), Gm = (1-fBLS)*Gm; end
+if exist('GT','var'), GT = (1-fBLS)*GT; end
+if exist('GKL','var'), GKL = (1-fBLS)*GKL; end
+if exist('Gh','var'), Gh = (1-fBLS)*Gh; end
+if exist('GL','var'), GL = (1-fBLS)*GL; end
+if exist('GA','var'), GA = (1-fBLS)*GA; end
+if exist('GCa','var'), GCa = (1-fBLS)*GCa; end
+if exist('Gahp','var'), Gahp = (1-fBLS)*Gahp; end
+end
+if proteinMode == 2
+if exist('Gl','var'), Gl = (1-fBLS)*Gl; end
+end
 %--------------------------------------------------------------------------
 % ---------------REGULAR OR FAST SPIKING NEURONS---------------------------
 %--------------------------------------------------------------------------
@@ -468,7 +485,11 @@ APindex = (10^5*U(:,1)>Qthresh)&(circshift(10^5*U(:,1),1,1)<Qthresh);
 APindex(1) = 0; % Remove circshift artifact
 APtimes = TvaluesY(APindex);  % AP times [s]
 clear APindex; % Save all memory that can be saved...
+if (threshMode == 0)
 NeuronActivated = ~isempty(APtimes); % Bool: 1 if neuron is activated
+elseif (threshMode == 1)
+NeuronActivated = ~isempty(APtimes(APtimes>=USps&&APtimes<=(USps+USpd)));
+end
 if MODE == 2
 SaveStr=['APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
