@@ -1,9 +1,11 @@
 function SONICrun_nanoMC(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
     ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
-proteinMode = '0'; threshMode = '0'; modeStr = '';
-if length(varargin) > 2 , disp('Warning: extra input parameters will be ignored'); end
-if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2};
+proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1';
+if length(varargin) > 3 , disp('Warning: extra input parameters will be ignored'); end
+if length(varargin) >= 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
+ modeStr = ['-(proteinMode,threshMode,gateMultip)=(' proteinMode ',' threshMode ',' gateMultip ')']; end
+if length(varargin) == 2, proteinMode = varargin{1}; threshMode = varargin{2};
  modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
 if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=(' proteinMode ')']; end
 % SONICrun_nanoMC is a MultiCompartmental nanoscale model (see Fig. 3 and
@@ -31,6 +33,9 @@ if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=
 % coverage including leak current)
 % threshMode: (0: neuron excitation during Tsim for threshold
 % determination; 1: only neuron excitation during stimulus duration).
+% gateMultip is a multiplier, applied to the conductivity gains that are
+% reduced if proteinMode ~= 0. E.g. if gains are actually determined at
+% fBLS_exp = 0.75, the local gains are 4 times the HH-gains.
 % 3. Units: SI-units are used, except for the membrane voltage [mV].
 % -> All input variables are strings, because this works more fluently
 % -PBS files for HPC simulations:
@@ -42,6 +47,7 @@ ESipa = str2double(ESisppa); PLOT = str2double(PLOT);
 USibegin = str2double(USibegin); USiend = str2double(USiend);
 SearchMode = str2double(SearchMode); aBLS = str2double(aBLS);
 fBLS = str2double(fBLS); proteinMode = str2double(proteinMode); threshMode = str2double(threshMode); 
+gateMultip = str2double(gateMultip);
 
 SearchPrecision = 2; % If MODE=1, number of significant digits of the solution
 % of the titration algorithm
@@ -559,14 +565,14 @@ OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
 if MODEL == 1 || MODEL == 2 || MODEL == 6 || MODEL == 7
 [t,U] = ode15s(@(t,U) SONIC_RSFS_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     U(6),U(7),U(8),U(9),U(10),Gna,Vna,Gk,Vk,Gm,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------LOW THRESHOLD SPIKING NEURONS--------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 3 || MODEL == 8
 [t,U] = ode23s(@(t,U) SONIC_LTS_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
     U(8),U(9),U(10),U(11),U(12),U(13),U(14),Gna,Vna,Gk,Vk,Gm,GT,VCa,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 %--------------------------------------------------------------------------
 %-------------------THALAMOCORTICAL NEURONS--------------------------------
 %--------------------------------------------------------------------------
@@ -574,14 +580,14 @@ elseif MODEL == 4
 [t,U] = ode23s(@(t,U) SONIC_TC_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),U(8),U(9),U(10),...
     U(11),U(12),U(13),U(14),U(15),U(16),U(17),U(18),U(19),U(20),Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,GKL,Gh,ginc,...
     Vh,k1,k2,k3,k4,Far,deffCa,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 %--------------------------------------------------------------------------
 %------------------NUCLEUS RETICULARIS NEURONS-----------------------------
 %--------------------------------------------------------------------------
 elseif MODEL == 5
 [t,U] = ode23s(@(t,U) SONIC_RE_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),U(6),U(7),...
     U(8),U(9),U(10),U(11),U(12),U(13),U(14),Gna,Vna,Gk,Vk,GT,fVCa,Gl,Vl,Far,deffCa,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------SUBTHALAMIC NUCLEUS MODEL-------------------------
 % -------------------------------------------------------------------------
@@ -590,42 +596,42 @@ elseif MODEL == 9
     U(1),U(2),U(3),U(4),U(5),U(6),U(7),U(8),U(9),U(10),U(11),U(12),U(13),...
     U(14),U(15),U(16),U(17),U(18),U(19),U(20),U(21),U(22),U(23),U(24),U(25),U(26),...
     Gna,Vna,Gk,Vk,Gl,Vl,GT,fVCa,GCa,GA,GL,Far,tauCa,f1Veff0,f1VeffPa,f1rt0,f1rtPa,...
-    rinf,d2inf,taur,taud2,f1rtV,SONICgates,Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    rinf,d2inf,taur,taud2,f1rtV,SONICgates,Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------THALAMUS RUBIN-TERMAN MODEL-----------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 10
 [t,U] = ode23s(@(t,U) SONIC_ThRT_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),...
     U(4),U(5),U(6),Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,minf,pinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 % -------------------------------------------------------------------------
 % ----------------------GLOBUS PALLIDUS INTERNUS NUCLEUS ------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 11
 [t,U] = ode23s(@(t,U) SONIC_GPi_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     U(6),U(7),U(8),U(9),U(10),Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 % -------------------------------------------------------------------------
 % ----------------------GLOBUS PALLIDUS EXTERNUS NUCLEUS-------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 12
 [t,U] = ode23s(@(t,U) SONIC_GPe_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     U(6),U(7),U(8),U(9),U(10),Gna,Vna,Gk,Vk,Gl,Vl,GT,VT,GCa,VCa,Gahp,minf,ainf,sinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 % -------------------------------------------------------------------------
 % -----------------------MEDIUM SPINY STRIATUM NEURONS---------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 13
 [t,U] = ode23s(@(t,U) SONIC_MSN_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),U(5),...
     U(6),U(7),U(8),U(9),U(10),Gna,Vna,Gk,Vk,Gl,Vl,Vm,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 % -------------------------------------------------------------------------
 % --------------------------HODGKIN-HUXLEY NEURONS-------------------------
 % -------------------------------------------------------------------------
 elseif MODEL == 14
 [t,U] = ode23s(@(t,U) SONIC_HH_nanoMC(ESi,USPaT,DISPLAY,tNICE,t,U(1),U(2),U(3),U(4),...
     U(5),U(6),U(7),U(8),Gna,Vna,Gk,Vk,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtV,SONICgates,...
-    Cm0,a,fBLS,RSI,proteinMode),tNICE,[Y0;Y0],OdeOpts);
+    Cm0,a,fBLS,RSI,proteinMode,gateMultip),tNICE,[Y0;Y0],OdeOpts);
 end
 TvaluesY = t; Y = U;
 Y1 = Y(:,1:end/2); Y2 = Y(:,end/2+1:end);

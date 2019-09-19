@@ -1,10 +1,12 @@
 function SONICrun(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
     ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
-proteinMode = '0'; threshMode = '0'; modeStr ='';
-if length(varargin) > 2 , disp('Warning: extra input parameters will be ignored'); end
-if length(varargin) >= 2, proteinMode = varargin{1}; threshMode = varargin{2}; 
-    modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
+proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1';
+if length(varargin) > 3 , disp('Warning: extra input parameters will be ignored'); end
+if length(varargin) >= 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
+ modeStr = ['-(proteinMode,threshMode,gateMultip)=(' proteinMode ',' threshMode ',' gateMultip ')']; end
+if length(varargin) == 2, proteinMode = varargin{1}; threshMode = varargin{2};
+ modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
 if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=(' proteinMode ')']; end
 % SONICrun is a speed-up version of funPES based on multi-scale
 % optimization with effective parameters. Based on:
@@ -30,6 +32,9 @@ if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=
 % coverage including leak current)
 % threshMode: (0: neuron excitation during Tsim for threshold
 % determination; 1: only neuron excitation during stimulus duration).
+% gateMultip is a multiplier, applied to the conductivity gains that are
+% reduced if proteinMode ~= 0. E.g. if gains are actually determined at
+% fBLS_exp = 0.75, the local gains are 4 times the HH-gains.
 % 3. Units: SI-units are used, except for the membrane voltage [mV].
 % -> All input variables are strings, because this works more fluently
 % -PBS files for HPC simulations:
@@ -41,6 +46,7 @@ ESipa = str2double(ESisppa); PLOT = str2double(PLOT);
 USibegin = str2double(USibegin); USiend = str2double(USiend);
 SearchMode = str2double(SearchMode); aBLS = str2double(aBLS);
 fBLS = str2double(fBLS); proteinMode = str2double(proteinMode); threshMode = str2double(threshMode);
+gateMultip = str2double(gateMultip);
 
 SearchPrecision = 2; % If MODE=1, number of significant digits of the solution
 % of the titration algorithm
@@ -400,19 +406,19 @@ OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
 
 % Partial coverage of protein gates / leakage currents
 if proteinMode == 1 || proteinMode == 2
-if exist('Gna','var'), Gna = (1-fBLS)*Gna; end
-if exist('Gk','var'), Gk = (1-fBLS)*Gk; end
-if exist('Gm','var'), Gm = (1-fBLS)*Gm; end
-if exist('GT','var'), GT = (1-fBLS)*GT; end
-if exist('GKL','var'), GKL = (1-fBLS)*GKL; end
-if exist('Gh','var'), Gh = (1-fBLS)*Gh; end
-if exist('GL','var'), GL = (1-fBLS)*GL; end
-if exist('GA','var'), GA = (1-fBLS)*GA; end
-if exist('GCa','var'), GCa = (1-fBLS)*GCa; end
-if exist('Gahp','var'), Gahp = (1-fBLS)*Gahp; end
+if exist('Gna','var'), Gna = gateMultip*(1-fBLS)*Gna; end
+if exist('Gk','var'), Gk = gateMultip*(1-fBLS)*Gk; end
+if exist('Gm','var'), Gm = gateMultip*(1-fBLS)*Gm; end
+if exist('GT','var'), GT = gateMultip*(1-fBLS)*GT; end
+if exist('GKL','var'), GKL = gateMultip*(1-fBLS)*GKL; end
+if exist('Gh','var'), Gh = gateMultip*(1-fBLS)*Gh; end
+if exist('GL','var'), GL = gateMultip*(1-fBLS)*GL; end
+if exist('GA','var'), GA = gateMultip*(1-fBLS)*GA; end
+if exist('GCa','var'), GCa = gateMultip*(1-fBLS)*GCa; end
+if exist('Gahp','var'), Gahp = gateMultip*(1-fBLS)*Gahp; end
 end
 if proteinMode == 2
-if exist('Gl','var'), Gl = (1-fBLS)*Gl; end
+if exist('Gl','var'), Gl = gateMultip*(1-fBLS)*Gl; end
 end
 %--------------------------------------------------------------------------
 % ---------------REGULAR OR FAST SPIKING NEURONS---------------------------
