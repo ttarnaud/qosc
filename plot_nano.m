@@ -65,7 +65,7 @@ end
 end
 end
 
-markerStyle = {'none','o'};
+markerStyle = {'o','none'};
 figure;
 hold on;
 for threshMode = 1:2
