@@ -1,6 +1,15 @@
 function SONICrun(Tsim,MODE,USpstart,USpd,USfreq,USdc,USprf,USisppa,ESpstart,ESpd,...
     ESdc,ESprf,ESisppa,PLOT,model,USibegin,USiend,SearchMode,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
+if nargin < 20
+fBLS = '1';
+if nargin < 19
+aBLS = '32e-9';
+if nargin < 18
+error('Not enough input arguments');
+end
+end
+end
 proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1';
 if length(varargin) > 3 , disp('Warning: extra input parameters will be ignored'); end
 if length(varargin) >= 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
