@@ -5,7 +5,7 @@ Pa2I = @(Pa) Pa.^2/(2*rhol*c);
 I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
-debugSwitch = nan;            % Number: only run part of the program. nan : run everything 
+debugSwitch = 4;            % Number: only run part of the program. nan : run everything 
 FigurePlot = 5;             % Number: plot this figure number. nan: plot everything
 
 %% FIGURE 5 Lemaire et al. (2018)
