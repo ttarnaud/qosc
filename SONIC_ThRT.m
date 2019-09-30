@@ -1,6 +1,6 @@
 function Out = SONIC_ThRT(ESi,USPaT,DISPLAY,tNICE,t,Q,h,r,Gna,Vna,Gk,Vk,Gl,Vl,...
     GT,VT,minf,pinf,f1Veff0,f1VeffPa,f1rt0,f1rtPa,SONICgates)
-if DISPLAY == 2
+if DISPLAY == 1
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tNICE(1))/(tNICE(2)-tNICE(1));  %#ok<*NASGU>
 msg = sprintf('Progress: %3.1f', Progress); 
@@ -8,8 +8,9 @@ fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg));  
 end
 rate = struct;
-rate.('h') = h*(h<=1)+(h>1);
-rate.('r') = r*(r<=1)+(r>1);
+h = h*(h<=1&h>=0)+(h>1);
+r = r*(r<=1&r>=0)+(r>1);
+rate.('h') = h; rate.('r') = r;
 
 if USPaT(t) == 0
 Veff = f1Veff0(Q);

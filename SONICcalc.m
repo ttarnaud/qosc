@@ -1,4 +1,4 @@
-function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS)
+function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS)
 coder.extrinsic('nakeinterp1');
 % SONICcalc calculates effective variables for one set of stimulus parameters
 
@@ -38,7 +38,7 @@ coder.extrinsic('nakeinterp1');
 
 % Remark 2: Speed considerations
 % SpeedUp -> NICE-model, UpSpeed -> BLS-model
-SpeedUp = 5;
+SpeedUp = 1;
 UpSpeed = 4;
 CORRTres = 0.99;     % Threshold for normalized unbiased autocorrelation in
 PerCheckMax = 4;    % At certain unpredictable parameters-values, presumed due to non-linearities, the BLS equations
@@ -99,7 +99,7 @@ DiffusionApproximation = 1; % Bool: if 1, apply approximation (*) on diffusion o
 % FunDelta0 = @(delta)(deltax./delta).^x-(deltax./delta).^y-(0.01*0.001*Vm0)^2/(2*epsr*eps0*Ar);
 % plot((1e-15:1e-11:50e-9),FunDelta0(1e-15:1e-11:50e-9));
 % fzero(FunDelta0,[1e-15,50*10^(-9)])
-xfs = 1;                % Active area fraction (-) within LU-table
+xfs = fBLS;                % Active area fraction (-) within LU-table
 ksi = 0.5*10^(-9);		% Boundary layer length leaflet-medium (m)
 deltaR = ksi;           % discretisation step outside the BLS (m)
 Rsim = 100*ksi;         % Total length simulation domain outside BLS (m)
