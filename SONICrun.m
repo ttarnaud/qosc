@@ -588,10 +588,25 @@ figure;
 nrGates = size(Y,2)-1; 
 TvaluesYms = 10^(3)*TvaluesY'; % [ms]
 
+VeffSample = zeros(size(TvaluesY));   % (mV)
+for i = 1:length(TvaluesY)
+if USstep(TvaluesY(i)) == 0
+VeffSample(i) = f1Veff0(10^(-5)*Charge(i));     
+else
+VeffSample(i) = f1VeffPa(10^(-5)*Charge(i));
+end
+end
+
 subplot(1+ceil(nrGates/2),1,1);
 hold on;
-plot(TvaluesYms,Charge);
+yyaxis left;
+plot(TvaluesYms,Charge,'color','b');
 ylabel('Charge [nC/cm^2]');
+ylim([-100,100]);
+yyaxis right;
+plot(TvaluesYms,VeffSample,'color','r');
+ylim([-100,100]);
+ylabel('V_{eff} [mV]')
 hold off;
 for i=1:floor(nrGates/2)
 subplot(1+ceil(nrGates/2),1,i+1);
