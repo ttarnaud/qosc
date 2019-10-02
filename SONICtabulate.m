@@ -13,6 +13,9 @@ fBLSRange = (0.05:0.05:1);
 USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
 aBLSRange = 32*10^(-9);              % Sonophore radius (m)   
 saveStrAdd = '-xfs';
+
+% Correct for charge redistribution if fBLS < 1 in the electrostatic force (corrPec) 
+corrPec = 1;                        % Bool: if 1, the table-name will contain "-corrPec"
 % --------------------------------------------------------------------------------
 ME = ''; futIND = 0;
 try p = gcp;
@@ -67,7 +70,7 @@ fBLS = fBLSRange(ifBLS);
                 reverseStr1 = repmat(sprintf('\b'), 1, length(msg)); 
 
                 Qm = QmRange(iQm);
-                FutureResults(iQm,iUSPa,iUSfreq,iaBLS,ifBLS) = parfeval(p,@SONICcalc,6,MODEL,Qm,USPa,USfreq,aBLS,fBLS); %#ok<AGROW>             
+                FutureResults(iQm,iUSPa,iUSfreq,iaBLS,ifBLS) = parfeval(p,@SONICcalc,6,MODEL,Qm,USPa,USfreq,aBLS,fBLS,corrPec); %#ok<AGROW>             
                 end
             end
         end
@@ -109,7 +112,7 @@ for ifBLS = (1:length(fBLSRange))
                 USPa = USPaRange(iUSPa);                
                 Qm = QmRange(iQm);
                 futIND = futIND+1;
-                [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS);
+                [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS,corrPec);
                 end
                 SONICtable.Zeff(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = Zeff;
                 SONICtable.Veff(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = Veff;
@@ -175,7 +178,12 @@ SONICtable.USfreqRange = USfreqRange;
 SONICtable.USPaRange = USPaRange; 
 SONICtable.fBLSRange = fBLSRange;
 
-saveStr = ['SONIC-' MODELstr saveStrAdd '.mat'];
+if (corrPec)
+  corrPecStr = '-corrPec';
+else 
+  corrPecStr = ''; %#ok<*UNRCH>
+end
+saveStr = ['SONIC-' MODELstr saveStrAdd corrPecStr '.mat'];
 save(saveStr,'SONICtable');
 
 end

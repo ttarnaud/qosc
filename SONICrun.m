@@ -10,9 +10,11 @@ error('Not enough input arguments');
 end
 end
 end
-proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1';
-if length(varargin) > 3 , disp('Warning: extra input parameters will be ignored'); end
-if length(varargin) >= 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
+corrPec = '0'; proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1';
+if length(varargin) > 4 , disp('Warning: extra input parameters will be ignored'); end
+if length(varargin) >= 4, proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3}; corrPec = varargin{4};
+ modeStr = ['-(proteinMode,threshMode,gateMultip,corrPec)=(' proteinMode ',' threshMode ',' gateMultip  ',' corrPec ')']; end
+if length(varargin) == 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
  modeStr = ['-(proteinMode,threshMode,gateMultip)=(' proteinMode ',' threshMode ',' gateMultip ')']; end
 if length(varargin) == 2, proteinMode = varargin{1}; threshMode = varargin{2};
  modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
@@ -44,6 +46,8 @@ if length(varargin) == 1, proteinMode = varargin{1}; modeStr = ['-(proteinMode)=
 % gateMultip is a multiplier, applied to the conductivity gains that are
 % reduced if proteinMode ~= 0. E.g. if gains are actually determined at
 % fBLS_exp = 0.75, the local gains are 4 times the HH-gains.
+% CorrPec [Boolean] (if 1): Correct the electrostatic pressure (Pec) for
+% fBLS < 1, to account for lateral charge redistribution
 % 3. Units: SI-units are used, except for the membrane voltage [mV].
 % -> All input variables are strings, because this works more fluently
 % -PBS files for HPC simulations:
@@ -55,7 +59,7 @@ ESipa = str2double(ESisppa); PLOT = str2double(PLOT);
 USibegin = str2double(USibegin); USiend = str2double(USiend);
 SearchMode = str2double(SearchMode); aBLS = str2double(aBLS);
 fBLS = str2double(fBLS); proteinMode = str2double(proteinMode); threshMode = str2double(threshMode);
-gateMultip = str2double(gateMultip);
+gateMultip = str2double(gateMultip); corrPec = str2double(corrPec);
 
 SearchPrecision = 2; % If MODE=1, number of significant digits of the solution
 % of the titration algorithm
@@ -297,7 +301,11 @@ ESi = @ (t) ESipa*ESstep(t);  % [A/m^2]
 
 % 2. Important functions
 if fBLS < 1
+if (corrPec)
+SONIC = load(['SONIC-' modelName '-xfs-corrPec.mat']);
+elseif (corrPec == 0)
 SONIC = load(['SONIC-' modelName '-xfs.mat']);
+end
 else
 SONIC = load(['SONIC-' modelName '.mat']);
 end

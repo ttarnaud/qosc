@@ -1,5 +1,12 @@
-function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS)
+function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
+
+corrPec = 0;
+if length(varargin) > 1, disp('Warning: extra inputs will be ignored'); end
+if length(varargin) >= 1
+corrPec = varargin{1};
+end
+
 % SONICcalc calculates effective variables for one set of stimulus parameters
 
 %% Input:
@@ -569,8 +576,13 @@ Cm = @(Z) FunCm(Z,Cm0,a,delta); % Membrane capacitance (F/m^2)
 if xfs ~= 1
 Cm = @(Z) xfs*Cm(Z)+(1-xfs)*Cm0; % Membrane capacitance with partial coverage (F/m^2)   
 end
-Pec = @(V,Z) (-a^2/(Z.^2+a^2))*((Cm(Z)*0.001*V)^2/(2*eps0*epsr)); % Electrostatic pressure (Pa)
-PecQ = @(Q,Z) (-a^2/(Z.^2+a^2))*(Q^2/(2*eps0*epsr));
+if (corrPec)
+cPec =  @(Z) (Cm(Z)-(1-xfs)*Cm0)/(xfs*Cm(Z));   % cPec = CmS/Cm0 [-]
+else
+cPec = @(Z) 1;
+end
+Pec = @(V,Z) (-a^2/(Z.^2+a^2))*((cPec(Z)*Cm(Z)*0.001*V)^2/(2*eps0*epsr)); % Electrostatic pressure (Pa)
+PecQ = @(Q,Z) (-a^2/(Z.^2+a^2))*((cPec(Z)*Q)^2/(2*eps0*epsr));
 Va = @(Z) pi*a^2*delta*(1+(Z./(3*delta)).*(Z.^2/a^2+3)); % Intraleaflet-volume (m^3)
 PS = @(Z) (2*ks*Z.^3)./(a^2*(a^2+Z.^2)); % Tension-pressure [Pa]
 R = @(Z) (a^2+Z.^2)/(2.*Z); % Radius of curvature [m]
