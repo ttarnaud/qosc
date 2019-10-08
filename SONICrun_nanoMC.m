@@ -70,6 +70,19 @@ MODEL = str2double(model);
 % STN is based on Otsuka et al.
 % Str-MSN is based on McCarthy et al.
 
+if any(MODEL == [10,11,12])
+fprintf(['\n Warning: SONIC multi-scale model (modelnr %u) makes use of instantaneous gate parameters ' ...
+'(x=xinf). Implementation will assume x=xinf(Veff). \n'],MODEL);
+% This implementation might not be the most accurate. 
+% 1) Note that if taux << 1/USfreq - as is implicit in funPES - then SONIC-averaging 
+% over the period of the non-linear membrane current would be most accurate.
+% E.g. : I_Na = g_Na m_inf(V)^3 (V-E_Na) -> effective parameters for
+% m_inf(Q/Cm)^3*(Q/Cm) and m_inf(Q/Cm)^3 are required. 
+% 2) If taux > 1/USfreq, while taux << dtES (motivating the assumption x =
+% xinf), then from dx/dt = (x_inf-x)/taux it follows that x = xeff(Q) would
+% be a good approximation (assumption: taux == cte) 
+end
+
 DISPLAY = 0;
 % Display level. Note: higher display level will give more runtime information but will slow the program 
 % DISPLAY = 0 -> No information displayed (use this option for HPC simulations)
