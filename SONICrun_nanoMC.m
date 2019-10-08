@@ -677,7 +677,7 @@ elseif (threshMode == 1)
 NeuronActivated2 = ~isempty(APtimes2(APtimes2>=USpstart&APtimes2<=(USpstart+USpd)));
 end
 NeuronActivated = NeuronActivated1||NeuronActivated2;
-APtimes = {APtimes1;APtimes2};
+APtimes = {APtimes1';APtimes2'};
 
 if MODE == 2
 SaveStr=['nanoMC-APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
