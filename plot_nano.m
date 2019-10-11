@@ -15,12 +15,7 @@ SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018
 % in BLS compartment. Leakage current full coverage. Gains multiplied by gateMultip
 % Model 6: (SONICrun, proteinMode = 1, gateMultip=4) Point-like SONIC model: protein channels partial coverage.
 % Gains multiplied by gateMultip.
-% Model 7: (funPES_nanoMC,proteinMode=0,gateMultip=1): Multi-compartmental NICE model: protein channels full coverage
-% Model 8: (funPES_nanoMC,proteinMode=1,gateMultip=1): Multi-compartmental NICE model: no protein
-% channels in BLS compartment. Leakage current full coverage. 
-% Model 9: (funPES_nanoMC,proteinMode=1,gateMultip=4): Multi-compartmental NICE model: no protein
-% channels in BLS compartment. Leakage current full coverage. Gains
-% multiplied by gateMultip
+% Model 7-12 : idem for funPES_nanoMC/funPES
 
 Tsim = 2;   % (s)
 USpd = 1;   % (s)
@@ -33,11 +28,17 @@ modelnr = 1;
 fBLSRange = (0.01:0.01:0.99);  % (-)
 fBLSRange = (0.05:0.1:0.95); fprintf('debug mode');
 
-ThreshPa = zeros(length(fBLSRange),9,2);     % [Pa] (fBLS x Model type x threshMode)
+ThreshPaSONIC = zeros(length(fBLSRange),6,2);     % [Pa] (fBLS x Model type x threshMode)
+ThreshPaNICE = zeros(length(fBLSRange),6,2);
+TempThreshPa = zeros(length(fBLSRange),6,2);
 
+for i = 1:2
+    switch i
+        case 1, cd(SONICpath);
+        case 2, cd(NICEpath);
+    end
 for proteinMode = 0:1
 for threshMode = 0:1
-cd(SONICpath);
 if proteinMode == 0, MultipLoop = 1; elseif proteinMode == 1, MultipLoop = [1,4]; end
 for gateMultip = MultipLoop
 parfor ifBLS=1:length(fBLSRange)
@@ -51,20 +52,31 @@ LoadStr=['nanoMC-Thresh(RS)-Tsim=' num2str(Tsim) '-US(' num2str(USps) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',0)-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLS) ')-fBLS=(' num2str(fBLSRange(ifBLS)) ')-(proteinMode,threshMode,gateMultip)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ').mat']; 
 ll = load(LoadStr);
-ThreshPa(ifBLS,2*proteinMode+1+2*(gateMultip==4),threshMode+1) = I2Pa(ll.IIpa);
+TempThreshPa(ifBLS,2*proteinMode+1+2*(gateMultip==4),threshMode+1) = I2Pa(ll.IIpa);
 delete(LoadStr);
 
 LoadStr2=['Thresh(RS)-Tsim=' num2str(Tsim) '-US(' num2str(USps) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',0)-ES(0,0,1,0,0)-aBLS=(' ...
     num2str(aBLS) ')-fBLS=(' num2str(fBLSRange(ifBLS)) ')-(proteinMode,threshMode,gateMultip)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ').mat']; 
 lr = load(LoadStr2);
-ThreshPa(ifBLS,2*proteinMode+2+2*(gateMultip==4),threshMode+1) = I2Pa(lr.IIpa);
+TempThreshPa(ifBLS,2*proteinMode+2+2*(gateMultip==4),threshMode+1) = I2Pa(lr.IIpa);
 delete(LoadStr2);
 end
 end
 end
 end
+    switch i
+        case 1, ThreshPaSONIC = TempThreshPa;
+        case 2, TreshPaNICE = TempThreshPa;
+    end
+end
 
+for i = 1:2
+switch i
+    case 1, ThreshPa = ThreshPaSONIC;
+    case 2, ThreshPa = ThreshPaNICE;
+end
+    
 markerStyle = {'o','none'};
 figure;
 hold on;
@@ -93,3 +105,4 @@ set(gca,'yscale','log');
 set(gcf,'color','w');
 legend(LegendPlot,legendNames);
 set(findobj('type','axes'),'fontsize',18);
+end
