@@ -738,6 +738,7 @@ end
 if PLOT
 Charge1 = 10^5*Y1(:,1); Charge2 = 10^5*Y2(:,1); % Charge [nC/cm^2]
 Charge = {Charge1;Charge2};
+Chargetot = (Charge1*fBLS+Charge2*(1-fBLS));
 if MODEL == 4
 SONICgatesN = vertcat(SONICgates,{'w0','wLock','hProtein'}');
 elseif MODEL == 9
@@ -777,6 +778,7 @@ hold on;
 yyaxis left;
 plot(TvaluesYms,Charge1,'color','b','linestyle','-','linewidth',2);
 plot(TvaluesYms,Charge2,'color','b','linestyle','--','linewidth',2);
+plot(TvaluesYms,Chargetot,'color','k','linestyle','-','linewidth',2);
 ylim([-100,100]);
 ylabel('Charge [nC/cm^2]');
 yyaxis right;
