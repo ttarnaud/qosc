@@ -71,15 +71,18 @@ end
     end
 end
 
+paramsStr = ['(Tsim,USps,USpd,USfreq,USdc,USprf,aBLS,modelnr) = (' num2str(Tsim) ',' num2str(USps) ',' ...
+    num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(aBLS) ',' num2str(modelnr) ')'];
+
 for i = 1:2
 switch i
-    case 1, ThreshPa = ThreshPaSONIC;
-    case 2, ThreshPa = ThreshPaNICE;
+    case 1, ThreshPa = ThreshPaSONIC; titleStr = ['SONIC model - ' paramsStr];
+    case 2, ThreshPa = ThreshPaNICE; titleStr = ['NICE model - ' paramsStr];
 end
-    
 markerStyle = {'o','none'};
 figure;
 hold on;
+title(titleStr);
 for threshMode = 1:2
 plot(100*fBLSRange,ThreshPa(:,1,threshMode)*10^(-3),'linestyle','-','color','b','linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,2,threshMode)*10^(-3),'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
