@@ -821,5 +821,3 @@ xlabel('Time [ms]');
 set(findall(gcf,'-property','FontSize'),'FontSize',14)
 end
 end
-
-
