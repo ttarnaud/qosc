@@ -17,9 +17,9 @@ SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018
 % Gains multiplied by gateMultip.
 % Model 7-12 : idem for funPES_nanoMC/funPES
 
-Tsim = 2;   % (s)
-USpd = 1;   % (s)
-USps = 0.5; % (s)
+Tsim = 0.3;   % (s)
+USpd = 0.1;   % (s)
+USps = 0.1; % (s)
 USfreq = 500e3; % (Hz)
 USdc = 1; USprf = 0; % (-,Hz)
 aBLS = 32e-9;       % (m)
@@ -42,8 +42,14 @@ for threshMode = 0:1
 if proteinMode == 0, MultipLoop = 1; elseif proteinMode == 1, MultipLoop = [1,4]; end
 for gateMultip = MultipLoop
 parfor ifBLS=1:length(fBLSRange)
+switch i
+    case 1
 SONICrun_nanoMC(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)),num2str(proteinMode),num2str(threshMode),num2str(gateMultip));
 SONICrun(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)),num2str(proteinMode),num2str(threshMode),num2str(gateMultip));
+    case 2
+funPES_nanoMC(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)),num2str(proteinMode),num2str(threshMode),num2str(gateMultip));
+funPES(num2str(Tsim),'1',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),'0','0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLSRange(ifBLS)),num2str(proteinMode),num2str(threshMode),num2str(gateMultip));      
+end
 end
 end
 for gateMultip = MultipLoop
