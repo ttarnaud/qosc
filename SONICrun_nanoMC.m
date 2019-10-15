@@ -754,7 +754,7 @@ num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
 USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
     num2str(ESprf) ',' ESisppa ')--(aBLS,fBLS)=(' num2str(aBLS) ',' num2str(fBLS) ')' modeStr '.mat'];
 TvaluesYms = 10^(3)*TvaluesY'; % [ms]
-saveData.TvaluesYms = TvaluesYms; saveData.Charge1 = Charge1; saveData.Charge2=Charge2;
+saveData.TvaluesYms = TvaluesYms; saveData.Charge1 = Charge1; saveData.Charge2=Charge2; saveData.Chargetot = Chargetot;
 saveData.Y1 = Y1; 
 saveData.Y2 = Y2;
 save(SaveDataStr,'saveData','-v7.3');
