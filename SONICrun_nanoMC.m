@@ -765,6 +765,8 @@ TvaluesYms = 10^(3)*TvaluesY'; % [ms]
 saveData.TvaluesYms = TvaluesYms; saveData.Charge1 = Charge1; saveData.Charge2=Charge2; saveData.Chargetot = Chargetot;
 saveData.Y1 = Y1; saveData.Y2 = Y2;
 saveData.Potential1 = VeffSample{1}; saveData.Potential2 = VeffSample{2};
+saveData.f3Veff = f3Veff; saveData.f3Zeff = f3Zeff;
+saveData.f3Cmeff = f3Cmeff; saveData.f3ngend = f3ngend;
 save(SaveDataStr,'saveData','-v7.3');
 end
 if PLOT == 1

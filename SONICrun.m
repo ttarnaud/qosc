@@ -595,13 +595,23 @@ SONICgatesN = vertcat(SONICgatesN,'cCai');
 end
 if ~exist('SONICgatesN','var'), SONICgatesN = SONICgates; end
 if PLOT == 2
+VeffSample = zeros(size(TvaluesY));   % (mV)
+for i = 1:length(TvaluesY)
+if USstep(TvaluesY(i)) == 0
+VeffSample(i) = f1Veff0(10^(-5)*Charge(i));     
+else
+VeffSample(i) = f1VeffPa(10^(-5)*Charge(i));
+end
+end
 SaveDataStr=['Data(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
 num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
 USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
     num2str(ESprf) ',' ESisppa ')--(aBLS,fBLS)=(' num2str(aBLS) ',' num2str(fBLS) ')' modeStr '.mat'];
 TvaluesYms = 10^(3)*TvaluesY'; % [ms]
 saveData.TvaluesYms = TvaluesYms; saveData.Charge = Charge;
-saveData.Y = Y; 
+saveData.Y = Y; saveData.Potential = VeffSample; 
+saveData.f3Veff = f3Veff; saveData.f3Zeff = f3Zeff;
+saveData.f3Cmeff = f3Cmeff; saveData.f3ngend = f3ngend;
 save(SaveDataStr,'saveData','-v7.3');
 end
 if PLOT == 1
