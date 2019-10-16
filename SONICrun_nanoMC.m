@@ -749,14 +749,22 @@ SONICgatesN = vertcat(SONICgatesN,'cCai');
 end
 if ~exist('SONICgatesN','var'), SONICgatesN = SONICgates; end
 if PLOT == 2
+VeffSample = {zeros(size(TvaluesY)),10^(-2)*Charge2./Cm0};   % (mV)
+for i = 1:length(TvaluesY)
+if USstep(TvaluesY(i)) == 0
+VeffSample{1}(i) = f1Veff0(10^(-5)*Charge{1}(i));
+else
+VeffSample{1}(i) = f1VeffPa(10^(-5)*Charge{1}(i));
+end
+end
 SaveDataStr=['nanoMC-Data(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
 num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
 USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
     num2str(ESprf) ',' ESisppa ')--(aBLS,fBLS)=(' num2str(aBLS) ',' num2str(fBLS) ')' modeStr '.mat'];
 TvaluesYms = 10^(3)*TvaluesY'; % [ms]
 saveData.TvaluesYms = TvaluesYms; saveData.Charge1 = Charge1; saveData.Charge2=Charge2; saveData.Chargetot = Chargetot;
-saveData.Y1 = Y1; 
-saveData.Y2 = Y2;
+saveData.Y1 = Y1; saveData.Y2 = Y2;
+saveData.Potential1 = VeffSample{1}; saveData.Potential2 = VeffSample{2};
 save(SaveDataStr,'saveData','-v7.3');
 end
 if PLOT == 1
