@@ -1,8 +1,11 @@
-function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS,varargin)
+function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff,varargout] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
 
-corrPec = 0;
-if length(varargin) > 1, disp('Warning: extra inputs will be ignored'); end
+corrPec = 0; DeltaQ = 0;
+if length(varargin) > 2, disp('Warning: extra inputs will be ignored'); end
+if length(varargin) >= 2
+DeltaQ = varargin{2};
+end
 if length(varargin) >= 1
 corrPec = varargin{1};
 end
@@ -693,51 +696,117 @@ BLSlinP0 =  @(Z,Q) Pm(Z)+PecQ(Q,Z)-PS(Z);             % Steady state expression 
 
 if (USPa == 0)              % Solver not required. Also, would take unreasonably long in the quasistatic part. 
     infinit = 1*10^(-12);           % Small number for fzero range
-    Zeff = fzero(@(Z) BLSlinP0(Z,Qm),[-delta/2+infinit,Hmax]);      % (m)
-    Cmeff = Cm(Zeff);  % (F/m^2)
-    Veff = (10^3)*Qm/Cmeff;      % (mV)
-    ngend = (Pin0*Va(Zeff))/(Rg*Temp);                    % (mol)
+    tPeriod = (0:dtUS:1/USfreq)'; Zperiod = zeros(size(tPeriod));
+    for i = 1:length(tPeriod)
+    Zperiod(i,1) =  fzero(@(Z) BLSlinP0(Z,Qm+DeltaQ*cos(2*pi*USfreq*tPeriod(i))),[-delta/2+infinit,Hmax]);  % (m)
+    end
+    calcEff = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Zperiod(:,1)));
+    calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Zperiod(:,1))));
+ 
+    Zeff = calcEff(@(X) X);             % (m)
+    Veff = 1000*calcEff(@(X) (Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(X));   % (mV)
+    Cmeff = calcEff(Cm);        % (F/m^2)
+
+    Vperiod = 1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Zperiod(:,1));
+    ampV = mean([max(Vperiod-mean(Vperiod)),-min(Vperiod-mean(Vperiod))]);
+    Vbase = Vperiod-(max(Vperiod)-ampV);
+    DeltaPhi = mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod')))));
+    varargout{1} = ampV;
+    varargout{2} = DeltaPhi;
+    
+    ngend = (Pin0*Va(Zperiod(end,1)))/(Rg*Temp);                    % (mol)
     a_i_eff = struct; apb_i_eff = struct;           % (/s)
-	if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 6 || MODEL == 7 || MODEL == 8 || MODEL == 13 || MODEL == 14
-    if SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6
-	apb_i_eff.('m') = ampbm(Veff); apb_i_eff.('n') = anpbn(Veff); apb_i_eff.('h') = ahpbh(Veff);
-    else
-	apb_i_eff.('m') = am(Veff)+bm(Veff); apb_i_eff.('n') = an(Veff)+bn(Veff); apb_i_eff.('h') = ah(Veff)+bh(Veff);  
+    if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 6 || MODEL == 7 || MODEL == 8 || MODEL == 13 || MODEL == 14
+        ameff = calcEffrate(am);
+        aneff = calcEffrate(an);
+        aheff = calcEffrate(ah);
+        if SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6
+        ampbmeff = calcEffrate(ampbm);
+        anpbneff = calcEffrate(anpbn);
+        ahpbheff = calcEffrate(ahpbh);
+        else
+        bmeff = calcEffrate(bm);
+        bneff = calcEffrate(bn);
+        bheff = calcEffrate(bh);
+
+        ampbmeff = ameff+bmeff;
+        anpbneff = aneff+bneff;
+        ahpbheff = aheff+bheff;    
+        end
+        a_i_eff.('m') = ameff; a_i_eff.('n') = aneff; a_i_eff.('h') = aheff;
+        apb_i_eff.('m') = ampbmeff; apb_i_eff.('n') = anpbneff; apb_i_eff.('h') = ahpbheff;
     end
-	a_i_eff.('m') = am(Veff); a_i_eff.('n') = an(Veff); a_i_eff.('h') = ah(Veff);
-	end
-	if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 6 || MODEL == 7 || MODEL == 8
-	a_i_eff.('p') = pinf(Veff)/taup(Veff); apb_i_eff.('p') = 1/taup(Veff); 
-	end
-	if MODEL == 4
-	a_i_eff.('w') = winf(Veff)/tauw(Veff); apb_i_eff.('w') = 1/tauw(Veff); 
-	end
-	if MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 8
-    a_i_eff.('s') = sinf(Veff)/taus(Veff); a_i_eff.('u') = uinf(Veff)/tauu(Veff);
-    apb_i_eff.('s') = 1/taus(Veff); apb_i_eff.('u') = 1/tauu(Veff);
-	end
-	if MODEL == 9
-    a_i_eff.('m') = minf(Veff)/taum(Veff); a_i_eff.('n') = ninf(Veff)/taun(Veff);  a_i_eff.('h') = hinf(Veff)/tauh(Veff);  
-	a_i_eff.('p') = pinf(Veff)/taup(Veff); a_i_eff.('q') = qinf(Veff)/tauq(Veff);  
-	a_i_eff.('a') = ainf(Veff)/taua(Veff);  a_i_eff.('b') = binf(Veff)/taub(Veff); a_i_eff.('c') = cinf(Veff)/tauc(Veff); a_i_eff.('d1') = d1inf(Veff)/taud1(Veff);
-    apb_i_eff.('m') = 1/taum(Veff); apb_i_eff.('n') = 1/taun(Veff); apb_i_eff.('h') = 1/tauh(Veff); apb_i_eff.('p') = 1/taup(Veff); 
-	apb_i_eff.('q') = 1/tauq(Veff);	apb_i_eff.('a') = 1/taua(Veff); apb_i_eff.('b') = 1/taub(Veff); apb_i_eff.('c') = 1/tauc(Veff); apb_i_eff.('d1') = 1/taud1(Veff);
-	end
-	if MODEL == 10 || MODEL == 11 || MODEL == 12
-	a_i_eff.('h') = hinf(Veff)/tauh(Veff); a_i_eff.('r') = rinf(Veff)/taur(Veff);
-	apb_i_eff.('h') = 1/tauh(Veff); apb_i_eff.('r') = 1/taur(Veff);
-	end
-	if MODEL == 11 || MODEL == 12
-	a_i_eff.('n') = ninf(Veff)/taun(Veff); apb_i_eff.('n') = 1/taun(Veff);
-	end
-	if MODEL == 13
-    if SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6
-	apb_i_eff.('p') = appbp(Veff);
-    else
-	apb_i_eff.('p') = ap(Veff)+bp(Veff);
+    if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 6 || MODEL == 7 || MODEL == 8
+        apeff = calcEffrate(@(X) pinf(X)./taup(X));
+        appbpeff = calcEffrate(@(X) 1./taup(X));
+        a_i_eff.('p') = apeff; apb_i_eff.('p') = appbpeff; 
     end
-	a_i_eff.('p') = ap(Veff); 
-	end
+    if MODEL == 4
+        aweff = calcEffrate(@(X) winf(X)./tauw(X));
+        awpbweff = calcEffrate(@(X) 1./tauw(X));
+        a_i_eff.('w') = aweff; apb_i_eff.('w') = awpbweff; 
+    end
+    if MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 8
+        aseff = calcEffrate(@(X) sinf(X)./taus(X));
+        aspbseff = calcEffrate(@(X) 1./taus(X));
+        aueff = calcEffrate(@(X) uinf(X)./tauu(X));
+        aupbueff = calcEffrate(@(X) 1./tauu(X));
+
+        a_i_eff.('s') = aseff; a_i_eff.('u') = aueff;
+        apb_i_eff.('s') = aspbseff; apb_i_eff.('u') = aupbueff;
+    end
+    if MODEL == 9
+        ameff = calcEffrate(@(X) minf(X)./taum(X));
+        ampbmeff = calcEffrate(@(X) 1./taum(X));
+        aneff = calcEffrate(@(X) ninf(X)./taun(X));
+        anpbneff = calcEffrate(@(X) 1./taun(X));
+        aheff = calcEffrate(@(X) hinf(X)./tauh(X));
+        ahpbheff = calcEffrate(@(X) 1./tauh(X));
+        apeff = calcEffrate(@(X) pinf(X)./taup(X));
+        appbpeff = calcEffrate(@(X) 1./taup(X));
+        aqeff = calcEffrate(@(X) qinf(X)./tauq(X));
+        aqpbqeff = calcEffrate(@(X) 1./tauq(X));
+        aaeff = calcEffrate(@(X) ainf(X)./taua(X));
+        aapbaeff = calcEffrate(@(X) 1./taua(X));
+        abeff = calcEffrate(@(X) binf(X)./taub(X));
+        abpbbeff = calcEffrate(@(X) 1./taub(X));
+        aceff = calcEffrate(@(X) cinf(X)./tauc(X));
+        acpbceff = calcEffrate(@(X) 1./tauc(X));
+        ad1eff = calcEffrate(@(X) d1inf(X)./taud1(X));
+        ad1pbd1eff = calcEffrate(@(X) 1./taud1(X));
+
+
+        a_i_eff.('m') = ameff; a_i_eff.('n') = aneff;  a_i_eff.('h') = aheff;  a_i_eff.('p') = apeff;  a_i_eff.('q') = aqeff;  
+        a_i_eff.('a') = aaeff;  a_i_eff.('b') = abeff;  a_i_eff.('c') = aceff;  a_i_eff.('d1') = ad1eff;
+        apb_i_eff.('m') = ampbmeff; apb_i_eff.('n') = anpbneff; apb_i_eff.('h') = ahpbheff; apb_i_eff.('p') = appbpeff; apb_i_eff.('q') = aqpbqeff;
+        apb_i_eff.('a') = aapbaeff; apb_i_eff.('b') = abpbbeff; apb_i_eff.('c') = acpbceff; apb_i_eff.('d1') = ad1pbd1eff;
+    end
+    if MODEL == 10 || MODEL == 11 || MODEL == 12
+        aheff = calcEffrate(@(X) hinf(X)./tauh(X));
+        ahpbheff = calcEffrate(@(X) 1./tauh(X));
+        areff = calcEffrate(@(X) rinf(X)./taur(X));
+        arpbreff = calcEffrate(@(X) 1./taur(X));
+
+        a_i_eff.('h') = aheff; a_i_eff.('r') = areff;
+        apb_i_eff.('h') = ahpbheff; apb_i_eff.('r') = arpbreff;
+    end
+    if MODEL == 11 || MODEL == 12
+        aneff = calcEffrate(@(X) ninf(X)./taun(X));
+        anpbneff = calcEffrate(@(X) 1./taun(X));
+
+        a_i_eff.('n') = aneff; apb_i_eff.('n') = anpbneff;
+    end
+    if MODEL == 13
+        apeff = calcEffrate(ap);
+        if SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 || SpeedUp == 6
+        appbpeff = calcEffrate(appbp);
+        else
+        bpeff = calcEffrate(bp);
+        appbpeff = apeff+bpeff;  
+        end
+        a_i_eff.('p') = apeff; 
+        apb_i_eff.('p') = appbpeff; 
+    end
     return;
 end
 
@@ -759,7 +828,7 @@ tspan = [0,Tmax];
 infinit = 1*10^(-12);           % Small number for fzero range
 Zold=Z0;
 while Tvalueslin(it)<=tspan(2) && Event
-Z = fzero(@(Z) BLSlinQ(Tvalueslin(it),Z,Qm),[-delta/2+infinit,Hmax]);
+Z = fzero(@(Z) BLSlinQ(Tvalueslin(it),Z,Qm+DeltaQ*cos(2*pi*USfreq*Tvalueslin(it))),[-delta/2+infinit,Hmax]);
 if Z <= -delta/2
     error('Unphysical solution: Z<=-delta/2');
 end
@@ -809,12 +878,12 @@ end
 % simulations for large displacements are the bottlenecks (are more time
 % intensive than small displacements)
 ME = ''; MEb = '';          
-try [t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+try [t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,DeltaQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
 catch ME
 end
 if ~isempty(ME)
 if strcmp(ME.identifier,'FunPm:UNPHYS')     % Unphysical solution might be caused by instability in the ode23t solver
-try [t,W] = ode113(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+try [t,W] = ode113(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,DeltaQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
 catch MEb   % We retry with ode113
 end
 if ~isempty(MEb)
@@ -831,7 +900,7 @@ if SpeedUp == 1 || SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 
 EventFcn = @(t,W) EventFcn2(t,W(1),W(2),W(3),W(4:3+Nout),USfreq,dtUS,CORRTres,PerCheckMax);
 OdeOpts = odeset('MaxStep',dtUS,'Events',EventFcn);
 end
-[t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
+[t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,DeltaQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
 SONICPer = maxlags;
 end
 if t(end) == tBLS(end)
@@ -861,12 +930,17 @@ Wperiod = vertcat(W(end,:),W(firstIn:end,:));
 % So actually trapz is more accurate than integral(nakeinterp1(...)), because in the latter twice higher order errors
 if DISPLAY == 2, disp('Calculating effective parameters'); end
 calcEff = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Wperiod(:,1)));
-calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*Qm./Cm(Wperiod(:,1))));
+calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Wperiod(:,1))));
 Zeff = calcEff(@(X) X);             % (m)
-Veff = 1000*calcEff(@(X) Qm./Cm(X));   % (mV)
+Veff = 1000*calcEff(@(X) (Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(X));   % (mV)
 Cmeff = calcEff(Cm);        % (F/m^2)
 ngend = Wperiod(end,3);
-
+Vperiod = 1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Wperiod(:,1));
+ampV = mean([max(Vperiod-mean(Vperiod)),-min(Vperiod-mean(Vperiod))]);
+Vbase = Vperiod-(max(Vperiod)-ampV);
+DeltaPhi = mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod')))));
+varargout{1} = ampV;
+varargout{2} = DeltaPhi;
 % ------------------------------Rate constants-----------------------------
 a_i_eff = struct; apb_i_eff = struct;
 if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 6 || MODEL == 7 || MODEL == 8 || MODEL == 13 || MODEL == 14

@@ -99,7 +99,7 @@ maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,a
 tic;
 % 1a. Multicompartmental parameters
 deffV = 100*10^(-9);   % The effective depth beneath the membrane area for axial current calculations (m)
-rhoi = 100;            % axoplasmatic resistivity (Ohm*m)
+rhoi = 1;            % axoplasmatic resistivity (Ohm*m)
 % 1b. General parameters
 Qthresh = 0;            % Threshold for Q for AP-discrimination [nC/cm^2]
 Cm0 = 0.01;				% Rest capacitance (F/m^2)	 
