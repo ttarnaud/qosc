@@ -9,7 +9,9 @@ DeltaQmRange = 0;
 saveStrAdd = '';
 
 % DeltaQmRange tables (outcomment for normal tables)
-DeltaQmRange = (-25*10^(-5):1*10^(-5):25*10^(-5));  
+DeltaQmRange = (0*10^(-5):25*10^(-5):500*10^(-5));  
+USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
+aBLSRange = 32*10^(-9);              % Sonophore radius (m)  
 saveStrAdd = [saveStrAdd,'-Qosc'];
 
 % % For Fig. 10 from Lemaire et al. we need tables with multiple membrane
