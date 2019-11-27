@@ -701,16 +701,16 @@ if (USPa == 0)              % Solver not required. Also, would take unreasonably
     Zperiod(i,1) =  fzero(@(Z) BLSlinP0(Z,Qm+DeltaQ*cos(2*pi*USfreq*tPeriod(i))),[-delta/2+infinit,Hmax]);  % (m)
     end
     calcEff = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Zperiod(:,1)));
-    calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Zperiod(:,1))));
+    calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(Zperiod(:,1))));
  
     Zeff = calcEff(@(X) X);             % (m)
     Veff = 1000*calcEff(@(X) (Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(X));   % (mV)
     Cmeff = calcEff(Cm);        % (F/m^2)
 
-    Vperiod = 1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Zperiod(:,1));
+    Vperiod = 1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(Zperiod(:,1));
     ampV = mean([max(Vperiod-mean(Vperiod)),-min(Vperiod-mean(Vperiod))]);
     Vbase = Vperiod-(max(Vperiod)-ampV);
-    DeltaPhi = mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod')))));
+    DeltaPhi = mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod)))));
     varargout{1} = ampV;
     varargout{2} = DeltaPhi;
     

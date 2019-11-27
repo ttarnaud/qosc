@@ -26,7 +26,7 @@ aBLS = 32e-9;       % (m)
 modelnr = 1;
 
 fBLSRange = (0.01:0.01:0.99);  % (-)
-fBLSRange = (0.05:0.5:0.95); fprintf('debug mode');
+fBLSRange = (0.05:0.1:0.95); 
 
 ThreshPaSONIC = zeros(length(fBLSRange),6,2);     % [Pa] (fBLS x Model type x threshMode)
 ThreshPaNICE = zeros(length(fBLSRange),6,2);
