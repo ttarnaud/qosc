@@ -1,4 +1,4 @@
-function Out = BLS1Q(DISPLAY,tBLS,t,Z,dZ,na,R,rhol,PecQ,Q0,DeltaQ,Pin,Pm,Po,PaT,omega,PS,delta0,mus,mul,S,Da,Ci,ka,ksi) %#ok<INUSL>
+function Out = BLS1Q(DISPLAY,tBLS,t,Z,dZ,na,R,rhol,PecQ,Q0,DeltaQ,psiQ,Pin,Pm,Po,PaT,omega,PS,delta0,mus,mul,S,Da,Ci,ka,ksi) %#ok<INUSL>
 if DISPLAY==2
 global reverseStr; %#ok<TLEV>
 Progress = 100*(t-tBLS(1))/(tBLS(end)-tBLS(1));  %#ok<*NASGU>
@@ -6,7 +6,7 @@ msg = sprintf('Progress: %3.1f', Progress);
 fprintf([reverseStr, msg]);
 reverseStr = repmat(sprintf('\b'), 1, length(msg)); 
 end
-Q = Q0+DeltaQ*cos(omega*t);
+Q = Q0+cos((1:1:numel(DeltaQ))*omega*t+psiQ')*DeltaQ;
 
 Out = [dZ;
 (-3/(2*R(Z)))*dZ^2+1/(rhol*abs(R(Z)))*(PecQ(Q,Z)+Pin(na,Z)+...

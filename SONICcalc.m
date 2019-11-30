@@ -1,8 +1,14 @@
 function [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff,varargout] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS,varargin)
 coder.extrinsic('nakeinterp1');
 
-corrPec = 0; DeltaQ = 0;
-if length(varargin) > 2, disp('Warning: extra inputs will be ignored'); end
+corrPec = 0; DeltaQ = 0; Nfourier = 1; psiQ = 0;
+if length(varargin) > 4, disp('Warning: extra inputs will be ignored'); end
+if length(varargin) >= 4
+Nfourier = varargin{4};
+end
+if length(varargin) >= 3
+psiQ = varargin{3};
+end
 if length(varargin) >= 2
 DeltaQ = varargin{2};
 end
@@ -697,22 +703,32 @@ BLSlinP0 =  @(Z,Q) Pm(Z)+PecQ(Q,Z)-PS(Z);             % Steady state expression 
 if (USPa == 0)              % Solver not required. Also, would take unreasonably long in the quasistatic part. 
     infinit = 1*10^(-12);           % Small number for fzero range
     tPeriod = (0:dtUS:1/USfreq)'; Zperiod = zeros(size(tPeriod));
+    
+    Qoscil = cos(2*pi*USfreq*bsxfun(@times,(1:1:numel(DeltaQ)),tPeriod)+psiQ')*DeltaQ;
+        
     for i = 1:length(tPeriod)
-    Zperiod(i,1) =  fzero(@(Z) BLSlinP0(Z,Qm+DeltaQ*cos(2*pi*USfreq*tPeriod(i))),[-delta/2+infinit,Hmax]);  % (m)
+    Zperiod(i,1) =  fzero(@(Z) BLSlinP0(Z,Qm+Qoscil(i)),[-delta/2+infinit,Hmax]);  % (m)
     end
     calcEff = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Zperiod(:,1)));
-    calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(Zperiod(:,1))));
+    calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+Qoscil)./Cm(Zperiod(:,1))));
  
     Zeff = calcEff(@(X) X);             % (m)
-    Veff = 1000*calcEff(@(X) (Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(X));   % (mV)
+    Veff = 1000*calcEff(@(X) (Qm+Qoscil)./Cm(X));   % (mV)
     Cmeff = calcEff(Cm);        % (F/m^2)
 
-    Vperiod = 1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod))./Cm(Zperiod(:,1));
+    Vperiod = 1000*(Qm+Qoscil)./Cm(Zperiod(:,1));
     ampV = mean([max(Vperiod-mean(Vperiod)),-min(Vperiod-mean(Vperiod))]);
     Vbase = Vperiod-(max(Vperiod)-ampV);
-    DeltaPhi = mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod)))));
+    DeltaPhi = circ_mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod)))));
     varargout{1} = ampV;
     varargout{2} = DeltaPhi;
+    
+    LowerBound = [Veff,-inf.*ones(1,2*Nfourier),2*pi*USfreq];
+    UpperBound = [Veff,inf.*ones(1,2*Nfourier),2*pi*USfreq];
+    [cfit,gof,output] = fit(tPeriod,Vperiod,['fourier' num2str(Nfourier)],'lower',LowerBound,'upper',UpperBound);
+    varargout{3} = cfit;
+    varargout{4} = gof;
+    varargout{5} = output;
     
     ngend = (Pin0*Va(Zperiod(end,1)))/(Rg*Temp);                    % (mol)
     a_i_eff = struct; apb_i_eff = struct;           % (/s)
@@ -828,7 +844,7 @@ tspan = [0,Tmax];
 infinit = 1*10^(-12);           % Small number for fzero range
 Zold=Z0;
 while Tvalueslin(it)<=tspan(2) && Event
-Z = fzero(@(Z) BLSlinQ(Tvalueslin(it),Z,Qm+DeltaQ*cos(2*pi*USfreq*Tvalueslin(it))),[-delta/2+infinit,Hmax]);
+Z = fzero(@(Z) BLSlinQ(Tvalueslin(it),Z,Qm+cos(2*pi*(1:1:numel(DeltaQ))*USfreq*Tvalueslin(it)+psiQ')*DeltaQ),[-delta/2+infinit,Hmax]);
 if Z <= -delta/2
     error('Unphysical solution: Z<=-delta/2');
 end
@@ -878,12 +894,12 @@ end
 % simulations for large displacements are the bottlenecks (are more time
 % intensive than small displacements)
 ME = ''; MEb = '';          
-try [t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,DeltaQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+try [t,W] = ode23t(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,DeltaQ,psiQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
 catch ME
 end
 if ~isempty(ME)
 if strcmp(ME.identifier,'FunPm:UNPHYS')     % Unphysical solution might be caused by instability in the ode23t solver
-try [t,W] = ode113(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,DeltaQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
+try [t,W] = ode113(@(t,W) BLS1Q(DISPLAY,tBLS,t,W(1),W(2),W(3),R,rhol,PecQ,Qm,DeltaQ,psiQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,Ca,ka,ksi),tBLS,W0(1:3),OdeOpts);
 catch MEb   % We retry with ode113
 end
 if ~isempty(MEb)
@@ -900,7 +916,7 @@ if SpeedUp == 1 || SpeedUp == 2 || SpeedUp == 3 || SpeedUp == 4 || SpeedUp == 5 
 EventFcn = @(t,W) EventFcn2(t,W(1),W(2),W(3),W(4:3+Nout),USfreq,dtUS,CORRTres,PerCheckMax);
 OdeOpts = odeset('MaxStep',dtUS,'Events',EventFcn);
 end
-[t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,DeltaQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
+[t,W] = ode113(@(t,W) BLS2Q(DISPLAY,tBLS,t,W(1),W(2),W(3),W(4:3+Nout),R,rhol,PecQ,Qm,DeltaQ,psiQ,Pin,Pm,Po,USPaT,omega,PS,delta0,mus,mul,S,Da,ka,A,B,deltaR),tBLS,W0,OdeOpts);
 SONICPer = maxlags;
 end
 if t(end) == tBLS(end)
@@ -929,18 +945,26 @@ Wperiod = vertcat(W(end,:),W(firstIn:end,:));
 % Note: trapz (trapezoidal integration) is the same as the integral of the linear interpolation. 
 % So actually trapz is more accurate than integral(nakeinterp1(...)), because in the latter twice higher order errors
 if DISPLAY == 2, disp('Calculating effective parameters'); end
+Qoscil = cos(2*pi*USfreq*bsxfun(@times,(1:1:numel(DeltaQ)),tPeriod')+psiQ')*DeltaQ;
 calcEff = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(Wperiod(:,1)));
-calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Wperiod(:,1))));
+calcEffrate = @(f) (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f(1000*(Qm+Qoscil)./Cm(Wperiod(:,1))));
 Zeff = calcEff(@(X) X);             % (m)
-Veff = 1000*calcEff(@(X) (Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(X));   % (mV)
+Veff = 1000*calcEff(@(X) (Qm+Qoscil)./Cm(X));   % (mV)
 Cmeff = calcEff(Cm);        % (F/m^2)
 ngend = Wperiod(end,3);
-Vperiod = 1000*(Qm+DeltaQ*cos(2*pi*USfreq*tPeriod'))./Cm(Wperiod(:,1));
+Vperiod = 1000*(Qm+Qoscil)./Cm(Wperiod(:,1));
 ampV = mean([max(Vperiod-mean(Vperiod)),-min(Vperiod-mean(Vperiod))]);
 Vbase = Vperiod-(max(Vperiod)-ampV);
-DeltaPhi = mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod')))));
+DeltaPhi = circ_mean(angle(hilbert(Vbase./ampV).*conj(hilbert(cos(2*pi*USfreq*tPeriod')))));
 varargout{1} = ampV;
 varargout{2} = DeltaPhi;
+
+LowerBound = [Veff,-inf.*ones(1,2*Nfourier),2*pi*USfreq];
+UpperBound = [Veff,inf.*ones(1,2*Nfourier),2*pi*USfreq];
+[cfit,gof,output] = fit(tPeriod',Vperiod,['fourier' num2str(Nfourier)],'lower',LowerBound,'upper',UpperBound);
+varargout{3} = cfit;
+varargout{4} = gof;
+varargout{5} = output;
 % ------------------------------Rate constants-----------------------------
 a_i_eff = struct; apb_i_eff = struct;
 if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 6 || MODEL == 7 || MODEL == 8 || MODEL == 13 || MODEL == 14
