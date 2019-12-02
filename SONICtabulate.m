@@ -82,26 +82,26 @@ SONICtable.('cfit') = SONICInitC; SONICtable.('gof') = SONICInitC;
 
 ProgressIncr1 = 0; ProgressIncr2 = 0; reverseStr1 = ''; reverseStr2 = '';
 if ParallelON == 1
-for ifBLS = (1:length(fBLSRange))
-fBLS = fBLSRange(ifBLS);
-    for iaBLS = (1:length(aBLSRange))
-    aBLS = aBLSRange(iaBLS);
-        for iUSfreq = (1:length(USfreqRange))
-        USfreq = USfreqRange(iUSfreq);
-            for iUSPa = (1:length(USPaRange))
-            USPa = USPaRange(iUSPa);			
-                for iQm = (1:length(QmRange)) 
-                Qm = QmRange(iQm);
-                    for iDeltaQm = (1:length(DeltaQmRange)^NfourierIn)
-                    DeltaQm = zeros(NfourierIn,1);    
-                    for ifr = 1:NfourierIn    
-                    DeltaQm(ifr) = deltaQmGrid{ifr}(iDeltaQm);
-                    end
-                        for ipsiQ = (1:length(psiQRange)^(NfourierIn-1))
-                        psiQ = zeros(NfourierIn,1);
-                        for ifr = 1:NfourierIn-1
-                        psiQ(ifr+1) = psiQGrid{ifr}(ipsiQ);
-                        end
+for ipsiQ = (1:length(psiQRange)^(NfourierIn-1))
+psiQ = zeros(NfourierIn,1);
+for ifr = 1:NfourierIn-1
+psiQ(ifr+1) = psiQGrid{ifr}(ipsiQ);
+end
+    for iDeltaQm = (1:length(DeltaQmRange)^NfourierIn)
+    DeltaQm = zeros(NfourierIn,1);    
+    for ifr = 1:NfourierIn    
+    DeltaQm(ifr) = deltaQmGrid{ifr}(iDeltaQm);
+    end
+        for ifBLS = (1:length(fBLSRange))
+        fBLS = fBLSRange(ifBLS);
+            for iaBLS = (1:length(aBLSRange))
+            aBLS = aBLSRange(iaBLS);
+                for iUSfreq = (1:length(USfreqRange))
+                USfreq = USfreqRange(iUSfreq);
+                    for iUSPa = (1:length(USPaRange))
+                    USPa = USPaRange(iUSPa);			
+                        for iQm = (1:length(QmRange)) 
+                        Qm = QmRange(iQm);
                     
                         ProgressIncr1 = ProgressIncr1+1;
                         Progress = 100*ProgressIncr1/numel(SONICInitM);
@@ -120,21 +120,22 @@ fBLS = fBLSRange(ifBLS);
 end
 end
 fprintf('\n');
-for ifBLS = (1:length(fBLSRange))
-    for iaBLS = (1:length(aBLSRange))
-        for iUSfreq = (1:length(USfreqRange))
-            for iUSPa = (1:length(USPaRange))	
-                for iQm = (1:length(QmRange))
-                    for iDeltaQm = (1:length(DeltaQmRange)^NfourierIn)
-                    DeltaQm = zeros(NfourierIn,1);
-                    for ifr = 1:NfourierIn    
-                    DeltaQm(ifr) = deltaQmGrid{ifr}(iDeltaQm);
-                    end
-                        for ipsiQ = (1:length(psiQRange)^(NfourierIn-1))
-                        psiQ = zeros(NfourierIn,1);
-                        for ifr = 1:NfourierIn-1
-                        psiQ(ifr+1) = psiQGrid{ifr}(ipsiQ);
-                        end
+for ipsiQ = (1:length(psiQRange)^(NfourierIn-1))
+psiQ = zeros(NfourierIn,1);
+for ifr = 1:NfourierIn-1
+psiQ(ifr+1) = psiQGrid{ifr}(ipsiQ);
+end
+    for iDeltaQm = (1:length(DeltaQmRange)^NfourierIn)
+    DeltaQm = zeros(NfourierIn,1);
+    for ifr = 1:NfourierIn    
+    DeltaQm(ifr) = deltaQmGrid{ifr}(iDeltaQm);
+    end
+        for ifBLS = (1:length(fBLSRange))
+            for iaBLS = (1:length(aBLSRange))
+                for iUSfreq = (1:length(USfreqRange))
+                    for iUSPa = (1:length(USPaRange))	
+                        for iQm = (1:length(QmRange))
+
                         ProgressIncr2 = ProgressIncr2+1;
                         Progress = 100*ProgressIncr2/numel(SONICInitM);
 
@@ -157,13 +158,14 @@ for ifBLS = (1:length(fBLSRange))
                            disp(InputArgs);
                            error('---------------------------');               
                         end
+                        futIND = futIND + numel(SONICInitM)*(iModel-1);         % futIND gives the linear index in the FutureResults array (so restarts for new iModel)
                         else
                         fBLS = fBLSRange(ifBLS);
                         aBLS = aBLSRange(iaBLS);
                         USfreq = USfreqRange(iUSfreq);
                         USPa = USPaRange(iUSPa);                
                         Qm = QmRange(iQm);
-                        futIND = futIND+1;
+                        futIND = futIND+1;      % Note: the order of the for-loops has to be correct when not using parallelON=1!!
                         [Zeff,Veff,a_i_eff,apb_i_eff,ngend,Cmeff,ampV,DeltaPhi,cfit,gof,~] = SONICcalc(MODEL,Qm,USPa,USfreq,aBLS,fBLS,corrPec,DeltaQm,psiQ,Nfourier);
                         end
                         SONICtable.Zeff(ind2sub(size(SONICInitM),futIND-(iModel-1)*numel(SONICInitM))) = Zeff;
