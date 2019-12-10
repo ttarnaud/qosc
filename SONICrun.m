@@ -93,7 +93,7 @@ DISPLAY = 0;
 
 % Discretisation parameters
 dt = min(50e-6,0.1*min(USdc/USprf,ESdc/ESprf));            % Discretisation time (s)
-atol = 1e-6; rtol = 1e-3; % absolute and relative VSVO-tolerances
+atol = 1e-3; rtol = 1e-3; % absolute and relative VSVO-tolerances
 maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,apb). Set to 'inf' if no maxRate
 % Physically protein gate opening/closing will have a minimal time delay, irrespective of voltage (~ 1/maxRate). 
 % Computationally, very high maxRate will increase the stiffness of the set of equations, without important alterations in the solution set 
@@ -110,7 +110,7 @@ Rg = 8.314;             % Universal gas constant (J/(K*mol))
 Far = 96485.3329;       % Faraday constant (C/mol) 
 %Temp = 309.15; 		    % Surrounding medium temperature (K)	
 %Temp = 306.15;
-Temp = 36+273.15;
+Temp = 33+273.15;
 deffCa = 100*10^(-9);   % The effective depth beneath the membrane area for calcium concentration calculations (m)
 cCae = 2;               % Extracellular Ca2+ concentration (mol/m^3)
 k1 = 2.5*10^22;         % k1 factor for hyperpolarization driven Ca regulation (M^-4*s^-1)

@@ -157,6 +157,7 @@ end
 markerStyle = {'none','none'};
 for threshMode = 1:2
 subplot(2,2,2*(i-1)+threshMode);
+text(0.02,0.98,['(' char('a' + threshMode-1+2*(i-1)) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','fontsize',17)
 hold on;
 plot(100*fBLSRange,ThreshPa(:,1,threshMode)*10^(-3),'linestyle','-','color','b','linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,2,threshMode)*10^(-3),'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
@@ -168,7 +169,7 @@ if (i==2)
 if threshMode==1
 LegendPlot(1) = plot(nan,'linestyle','-','color','b');
 LegendPlot(2) = plot(nan,'linestyle','-','color',[0.5 0.5 0.5]);
-legendNames = {'Nanoscale multicompartmental SONIC';'Point-like SONIC'};
+legendNames = {'Nanoscale multicompartmental model';'Point-like model'};
 else
 LegendPlot(1) = plot(nan,'linestyle','-','color','k');
 LegendPlot(2) = plot(nan,'linestyle','--','color','k');
