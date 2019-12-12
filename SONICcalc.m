@@ -726,10 +726,11 @@ if (USPa == 0)              % Solver not required. Also, would take unreasonably
     LowerBound = [Veff,-inf.*ones(1,2*Nfourier),2*pi*USfreq];
     UpperBound = [Veff,inf.*ones(1,2*Nfourier),2*pi*USfreq];
     [cfit,gof,output] = fit(tPeriod,Vperiod,['fourier' num2str(Nfourier)],'lower',LowerBound,'upper',UpperBound);
-    varargout{3} = cfit;
-    varargout{4} = gof;
-    varargout{5} = output;
     
+    varargout{3} = [(coeffvalues(cfit));confint(cfit)];
+    varargout{4} = cell2mat(struct2cell(gof));
+    varargout{5} = output;
+
     ngend = (Pin0*Va(Zperiod(end,1)))/(Rg*Temp);                    % (mol)
     a_i_eff = struct; apb_i_eff = struct;           % (/s)
     if MODEL == 1 || MODEL == 2 || MODEL == 3 || MODEL == 4 || MODEL == 5 || MODEL == 6 || MODEL == 7 || MODEL == 8 || MODEL == 13 || MODEL == 14
@@ -962,8 +963,9 @@ varargout{2} = DeltaPhi;
 LowerBound = [Veff,-inf.*ones(1,2*Nfourier),2*pi*USfreq];
 UpperBound = [Veff,inf.*ones(1,2*Nfourier),2*pi*USfreq];
 [cfit,gof,output] = fit(tPeriod',Vperiod,['fourier' num2str(Nfourier)],'lower',LowerBound,'upper',UpperBound);
-varargout{3} = cfit;
-varargout{4} = gof;
+
+varargout{3} = [(coeffvalues(cfit));confint(cfit)];
+varargout{4} = cell2mat(struct2cell(gof));
 varargout{5} = output;
 % ------------------------------Rate constants-----------------------------
 a_i_eff = struct; apb_i_eff = struct;

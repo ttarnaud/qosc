@@ -12,27 +12,27 @@ DeltaQmRange = 0;
 saveStrAdd = '';
 
 % DeltaQmRange tables (outcomment for normal tables)
-DeltaQmRange = (0*10^(-5):25*10^(-5):500*10^(-5));  
-USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
-aBLSRange = 32*10^(-9);              % Sonophore radius (m)  
-saveStrAdd = [saveStrAdd,'-Qosc'];
+% DeltaQmRange = (0*10^(-5):25*10^(-5):500*10^(-5));  
+% USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
+% aBLSRange = 32*10^(-9);              % Sonophore radius (m)  
+% saveStrAdd = [saveStrAdd,'-Qosc'];
 
 % Fourier oscillating tables (outcomment for normal tables)
-Nfourier = 8;
-NfourierIn = 1;
-DeltaQmRange = (0*10^(-5):25*10^(-5):500*10^(-5));  
-psiQRange = 0;
-USPaRange = 100e3;
-USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
-aBLSRange = 32*10^(-9);              % Sonophore radius (m)  
-saveStrAdd = [saveStrAdd,'Fourier' num2str(Nfourier) '-FourierIn' num2str(NfourierIn)];
-
-% % For Fig. 10 from Lemaire et al. we need tables with multiple membrane
-% % coverages -- Out-comment for normal tables.
-% fBLSRange = (0.05:0.05:1);
+% Nfourier = 8;
+% NfourierIn = 1;
+% DeltaQmRange = (0*10^(-5):25*10^(-5):500*10^(-5));  
+% psiQRange = 0;
+% USPaRange = 100e3;
 % USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
-% aBLSRange = 32*10^(-9);              % Sonophore radius (m)   
-% saveStrAdd = [saveStrAdd '-xfs'];
+% aBLSRange = 32*10^(-9);              % Sonophore radius (m)  
+% saveStrAdd = [saveStrAdd,'Fourier' num2str(Nfourier) '-FourierIn' num2str(NfourierIn)];
+
+% For Fig. 10 from Lemaire et al. we need tables with multiple membrane
+% coverages -- Out-comment for normal tables.
+fBLSRange = (0.05:0.05:1);
+USfreqRange = 0.5*10^(6);            % Ultrasonic frequency [Hz]
+aBLSRange = 32*10^(-9);              % Sonophore radius (m)   
+saveStrAdd = [saveStrAdd '-xfs'];
 
 % Correct for charge redistribution if fBLS < 1 in the electrostatic force (corrPec) 
 corrPec = 0;                        % Bool: if 1, the table-name will contain "-corrPec"
