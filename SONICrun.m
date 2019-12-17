@@ -294,6 +294,22 @@ Vl = -59.4;             % Leak nernst potential (mV)
 Vm0 = -70;              % Resting potential (mV)
 modelName = 'HH';
 end
+% Partial coverage of protein gates / leakage currents
+if proteinMode == 1 || proteinMode == 2
+if exist('Gna','var'), Gna = gateMultip*(1-fBLS)*Gna; end
+if exist('Gk','var'), Gk = gateMultip*(1-fBLS)*Gk; end
+if exist('Gm','var'), Gm = gateMultip*(1-fBLS)*Gm; end
+if exist('GT','var'), GT = gateMultip*(1-fBLS)*GT; end
+if exist('GKL','var'), GKL = gateMultip*(1-fBLS)*GKL; end
+if exist('Gh','var'), Gh = gateMultip*(1-fBLS)*Gh; end
+if exist('GL','var'), GL = gateMultip*(1-fBLS)*GL; end
+if exist('GA','var'), GA = gateMultip*(1-fBLS)*GA; end
+if exist('GCa','var'), GCa = gateMultip*(1-fBLS)*GCa; end
+if exist('Gahp','var'), Gahp = gateMultip*(1-fBLS)*Gahp; end
+end
+if proteinMode == 2
+if exist('Gl','var'), Gl = gateMultip*(1-fBLS)*Gl; end
+end
 
 % ---------------------------ULTRASONIC SOURCE-----------------------------
 if USdc == 1
@@ -433,23 +449,6 @@ f1Veff0 = @(Q) nakeinterp1(QmRange',VecVeff0,Q);
 f1VeffPa = @(Q) nakeinterp1(QmRange',VecVeffPa,Q);
 
 OdeOpts=odeset('MaxStep',dt,'AbsTol',atol,'RelTol',rtol); tNICE = [0,Tsim];
-
-% Partial coverage of protein gates / leakage currents
-if proteinMode == 1 || proteinMode == 2
-if exist('Gna','var'), Gna = gateMultip*(1-fBLS)*Gna; end
-if exist('Gk','var'), Gk = gateMultip*(1-fBLS)*Gk; end
-if exist('Gm','var'), Gm = gateMultip*(1-fBLS)*Gm; end
-if exist('GT','var'), GT = gateMultip*(1-fBLS)*GT; end
-if exist('GKL','var'), GKL = gateMultip*(1-fBLS)*GKL; end
-if exist('Gh','var'), Gh = gateMultip*(1-fBLS)*Gh; end
-if exist('GL','var'), GL = gateMultip*(1-fBLS)*GL; end
-if exist('GA','var'), GA = gateMultip*(1-fBLS)*GA; end
-if exist('GCa','var'), GCa = gateMultip*(1-fBLS)*GCa; end
-if exist('Gahp','var'), Gahp = gateMultip*(1-fBLS)*Gahp; end
-end
-if proteinMode == 2
-if exist('Gl','var'), Gl = gateMultip*(1-fBLS)*Gl; end
-end
 %--------------------------------------------------------------------------
 % ---------------REGULAR OR FAST SPIKING NEURONS---------------------------
 %--------------------------------------------------------------------------
