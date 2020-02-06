@@ -7,12 +7,16 @@ I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
 LoadPathNICE = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\ThreshSims\NICE (HPC)';
-LoadPathSONIC = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\ThreshSims\SONIC (LOCAL)';
+LoadPathSONIC = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\ThreshSims\SONIC (LOCAL)\T=33C';
 
 customLoadPath = 1;         % Bool (if 1, look in loadPath) to load the files 
 keepTemps = 1;              % Bool (if 1, keep temporary files, if 0; delete)
 performSimuls = 0;          % Bool (if 1, do simulations first)
 plotMode = 2;
+
+if (performSimuls == 1) && (customLoadPath == 1)
+    disp('Warning: inconsistency -- performSimuls=1 and customLoadPath=1');
+end
 % Model 1: (SONICrun_nanoMC,proteinMode=0,gateMultip=1) Multi-compartmental SONIC model: protein channels full coverage
 % Model 2: (SONICrun,proteinMode=0,gateMultip=1) Point-like SONIC model: protein channels full coverage
 % Model 3: (SONICrun_nanoMC,proteinMode=1,gateMultip=1) Multi-compartmental SONIC model: no protein
@@ -151,13 +155,13 @@ legPos = {[0.0116 0.9334 0.2198 0.0580];[0.2345 0.9062 0.2276 0.0852]};
 figure('units','normalized','position',[0 0 1 1]);
 for i = 1:2
 switch i
-case 2, ThreshPa = ThreshPaSONIC; titleStr = ['SONIC model'];
-case 1, ThreshPa = ThreshPaNICE; titleStr = ['NICE model'];
+case 2, ThreshPa = ThreshPaSONIC; titleStr = ['SONIC'];
+case 1, ThreshPa = ThreshPaNICE; titleStr = ['NICE'];
 end
 markerStyle = {'none','none'};
 for threshMode = 1:2
 subplot(2,2,2*(i-1)+threshMode);
-text(0.02,0.98,['(' char('a' + threshMode-1+2*(i-1)) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','fontsize',17)
+text(0.02,1.15,['(' char('a' + threshMode-1+2*(i-1)) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','fontsize',17)
 hold on;
 plot(100*fBLSRange,ThreshPa(:,1,threshMode)*10^(-3),'linestyle','-','color','b','linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,2,threshMode)*10^(-3),'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
@@ -189,9 +193,11 @@ ylim([10,600]);
 set(gca,'yscale','log');
 set(gcf,'color','w');
 end
-tit(i) = title(titleStr,'Position',[60.7271 741.3792 0]);
+tit(i) = title(titleStr,'Position',[-17.1889 732.6075 0]);
 set(findobj('type','axes'),'fontsize',18);
 end
-set(tit(2),'Position',[-9.8794 815.4413 0]);
-
+set(tit(2),'Position',[-16.8778 815.4413 0]);
+set(findobj('type','axes'),'linewidth',2); set(findobj('type','line'),'linewidth',2);
+set(findobj('type','axes'),'fontsize',30,'fontweight','bold');
+set(findall(gcf,'-property','FontSize'),'Fontsize',30); set(findall(gcf,'-property','fontweight'),'fontweight','bold');
 end
