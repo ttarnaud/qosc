@@ -98,8 +98,10 @@ maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,a
 % Physically protein gate opening/closing will have a minimal time delay, irrespective of voltage (~ 1/maxRate). 
 % Computationally, very high maxRate will increase the stiffness of the set of equations, without important alterations in the solution set 
 % (e.g. for all practical purposes, gate opening from 0->1 in 1 us is equal to infinitely fast opening) 
-Tupdate = 500e-6;           % Update of fourier coefficients [s]
+Tupdate = 50e-6;           % Update of fourier coefficients [s]
 pretabulSONIC = 0;
+tableVersion = '-v2'; 
+fminTolFun = 1e-20; fminTolX = 1e-20;    % fminsearch tolerances (default is 1e-4 for tolfun and tolX). Should be stable w.r.t. starting point
 
 tic;
 % 1a. Multicompartmental parameters
@@ -472,7 +474,7 @@ ESi = @ (t) ESipa*ESstep(t);  % [A/m^2]
 RSI = (rhoi/(2*pi*deffV))*log((a+a/sqrt(fBLS))/a);           % Axial resistance (Ohm)
 
 % 2b. General important functions
-SONIC = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) '.mat']); 
+SONIC = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '.mat']); 
 SONICtable = SONIC.SONICtable;
 % 2.1 SONIC functions (rate, Veff, Zeff, Cmeff, ngend)
 QmRange = SONICtable.QmRange; USPaRange = SONICtable.USPaRange; 
@@ -483,13 +485,13 @@ Veff6D = permute(SONICtable.Veff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); Zeff6D = permu
 Cmeff6D = permute(SONICtable.Cmeff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); ngend6D = permute(SONICtable.ngend(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]);       % Note: Compartment 1 has full sonophore coverage -> don't use SONIC-xfs tables!
 cfit6D = permute(SONICtable.cfit(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]);
 
-resh = [numel(QmRange),numel(USPaRange),numel(USfreqRange),numel(aBLSRange),repmat(numel(DeltaQmRange),[1,NFS]),repmat(numel(psiQRange),[1,NFS-1])];
+resh = [numel(QmRange),numel(USPaRange),numel(USfreqRange),numel(aBLSRange),repmat(numel(DeltaQmRange),[1,NFS]),repmat(numel(psiQRange),[1,NFS])];
 reshC = num2cell(resh);
-interpgrid = horzcat({QmRange},{USPaRange},{USfreqRange},{aBLSRange},repmat({DeltaQmRange},[1,NFS]),repmat({psiQRange},[1,NFS-1]));
+interpgrid = horzcat({QmRange},{USPaRange},{USfreqRange},{aBLSRange},repmat({DeltaQmRange},[1,NFS]),repmat({psiQRange},[1,NFS]));
 
-Veff2NFSp3D = reshape(Veff6D,resh); Zeff2NFSp3D = reshape(Zeff6D,resh); Cmeff2NFSp3D = reshape(Cmeff6D,resh);
-ngend2NFSp3D = reshape(ngend6D,resh); cfit2NFSp3D = reshape(cfit6D,resh);
-cfit2NFSp3Dcell = permute(mat2cell(cell2mat(cellfun(@(X)permute(X',[2*NFS+4,(2:2*NFS+3),1]),cfit2NFSp3D,'UniformOutput',0)),reshC{:},ones(2*NFS+1,1)),[2*NFS+4,(1:2*NFS+3)]);
+Veff2NFSp4D = reshape(Veff6D,resh); Zeff2NFSp4D = reshape(Zeff6D,resh); Cmeff2NFSp4D = reshape(Cmeff6D,resh);
+ngend2NFSp4D = reshape(ngend6D,resh); cfit2NFSp4D = reshape(cfit6D,resh);
+cfit2NFSp4Dcell = permute(mat2cell(cell2mat(cellfun(@(X)permute(X',[2*NFS+5,(2:2*NFS+4),1]),cfit2NFSp4D,'UniformOutput',0)),reshC{:},ones(2*NFS+1,1)),[2*NFS+5,(1:2*NFS+4)]);
 
 % rate 6D sonic tables
 SONICfields = fieldnames(SONICtable);
@@ -500,11 +502,11 @@ for i = 1:length(SONICrates)
 rt.(SONICrates{i}) = min(SONICtable.(SONICrates{i}),maxRate);
 rt.(SONICrates{i}) = reshape(permute(rt.(SONICrates{i})(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]),resh);
 end
-tempf6Veff = @(queryC) interpn(interpgrid{:},Veff2NFSp3D,queryC{:},'linear');
-tempf6Zeff = @(queryC) interpn(interpgrid{:},Zeff2NFSp3D,queryC{:},'linear');
-tempf6Cmeff = @(queryC) interpn(interpgrid{:},Cmeff2NFSp3D,queryC{:},'linear');
-tempf6ngend = @(queryC) interpn(interpgrid{:},ngend2NFSp3D,queryC{:},'linear');
-tempf6cfit = @(queryC) cellfun(@(X) interpn(interpgrid{:},X,queryC{:},'linear'),cfit2NFSp3Dcell); 
+tempf6Veff = @(queryC) interpn(interpgrid{:},Veff2NFSp4D,queryC{:},'linear');
+tempf6Zeff = @(queryC) interpn(interpgrid{:},Zeff2NFSp4D,queryC{:},'linear');
+tempf6Cmeff = @(queryC) interpn(interpgrid{:},Cmeff2NFSp4D,queryC{:},'linear');
+tempf6ngend = @(queryC) interpn(interpgrid{:},ngend2NFSp4D,queryC{:},'linear');
+tempf6cfit = @(queryC) cellfun(@(X) interpn(interpgrid{:},X,queryC{:},'linear'),cfit2NFSp4Dcell); 
 
 f6Veff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Veff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ))); % DeltaQm/psiQ are NFSx1 and (NFS-1)x1 column vectors
 f6Zeff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Zeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
@@ -564,7 +566,7 @@ end
 
 index = @(A,ind) A(ind);
 fc2DeltaQm = @(X) sqrt(sum(reshape(X,2,[]).^2))';            % Fourier components to DeltaQm
-fc2phiQ = @(X) index(-atan2(X(~~repmat([0;1],NFS,1)),X(~~repmat([1;0],NFS,1))),(2:NFS));   % Fourier components to psiQ
+fc2phiQ = @(X) mod(-atan2(X(~~repmat([0;1],NFS,1)),X(~~repmat([1;0],NFS,1))),2*pi);   % Fourier components to psiQ
 FC0 = zeros(2*NFS,1);           % Initial fourier components [A1;B1;A2;B2;...] of the bilayer sonophore
 flipFC = reshape(flip(reshape((1:2*NFS),2,[])),[],1);  
 
@@ -572,7 +574,7 @@ fQosc = @(Qm,USPa,X) X-10^(-3)*repmat([1;-1],NFS,1).*(index(index(f5cfit(Qm,USPa
     (cumsum(repmat([1;0],NFS,1))*(2*pi*USfreq)*RSI*pi*aBLS^2);              % Charge oscillation equation       (Note: second term with + sign, because FCs_{compartment2} ~ -FCs_{compartment1}
 tPeriod = (0:0.025/USfreq:1/USfreq)'; 
 for j = 1:length(SONICrates)
-f1rtVQosc.(SONICrates{j}) = @(Veff,FC)  (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f1rtV.(SONICrates{j})(1000*((Cm0*1e-3*Veff).*ones(size(tPeriod))+cos(2*pi*USfreq*bsxfun(@times,(1:1:numel(fc2DeltaQm(FC))),tPeriod)+[0,fc2phiQ(FC)'])*fc2DeltaQm(FC))./Cm0));
+f1rtVQosc.(SONICrates{j}) = @(Veff,FC)  (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f1rtV.(SONICrates{j})(1000*((Cm0*1e-3*Veff).*ones(size(tPeriod))+cos(2*pi*USfreq*bsxfun(@times,(1:1:numel(fc2DeltaQm(FC))),tPeriod)+fc2phiQ(FC)')*fc2DeltaQm(FC))./Cm0));
 end
 
 % 4. Solver
@@ -646,6 +648,7 @@ tspan = tSONICc(1)+[(iUP-1)*Tupdate iUP*Tupdate];
 if iUP==nUP
     tspan(2) = tSONICc(2);
 end
+optimops = optimset('TolFun',fminTolFun,'TolX',fminTolX);           
 FC = fminsearch(@(X) sum(fQosc(Qm0,USPa,X).^2),FC0);
 for k=1:length(SONICrates)
 f1rtVp.(SONICrates{k}) = @(V) f1rtVQosc.(SONICrates{k})(V,-(fBLS/(1-fBLS))*FC);         % f1rtV at the proteins with oscillations
