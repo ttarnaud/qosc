@@ -99,9 +99,11 @@ maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,a
 % Computationally, very high maxRate will increase the stiffness of the set of equations, without important alterations in the solution set 
 % (e.g. for all practical purposes, gate opening from 0->1 in 1 us is equal to infinitely fast opening) 
 Tupdate = 50e-6;           % Update of fourier coefficients [s]
-pretabulSONIC = 0;
-tableVersion = '-v2'; 
+pretabulSONIC = 0;         % If 1, map SONIC-table to 1D every Tupdate and use nakeinterp1 (implies linear interpolation) 
+tableVersion = '-v2-up5_spline'; 
+HomogeneousInput = 1;      % If 1, SONICtables are input homogeneously to reduce memory requirements
 fminTolFun = 1e-20; fminTolX = 1e-20;    % fminsearch tolerances (default is 1e-4 for tolfun and tolX). Should be stable w.r.t. starting point
+interpMethod = 'linear';
 
 tic;
 % 1a. Multicompartmental parameters
@@ -474,8 +476,30 @@ ESi = @ (t) ESipa*ESstep(t);  % [A/m^2]
 RSI = (rhoi/(2*pi*deffV))*log((a+a/sqrt(fBLS))/a);           % Axial resistance (Ohm)
 
 % 2b. General important functions
+if ~HomogeneousInput
 SONIC = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '.mat']); 
 SONICtable = SONIC.SONICtable;
+else
+SONICinfo = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '_HO_info.mat']);    
+SONICHOtable = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '_HO.mat']);
+
+szSONICHOtable = num2cell(size(SONICHOtable.HO_SONIC));
+SONICHOtable = mat2cell(SONICHOtable.HO_SONIC,ones(szSONICHOtable{1},1),szSONICHOtable{2:end});
+SONICtable = SONICinfo.HO_SONICinfo.SONICRange;
+SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = [];
+for i = 1:numel(SONICinfo.HO_SONICinfo.SONICnames)-1
+SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{i}) = permute(SONICHOtable{i},[(2:numel(szSONICHOtable)),1]);
+end
+for j = 1:2*NFS+1
+SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = cat(8,SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}),...
+    permute(SONICHOtable{numel(SONICinfo.HO_SONICinfo.SONICnames)+j-1},...
+    [(2:numel(szSONICHOtable)),1]));
+end
+auxOnes = cellfun(@(X) ones(X,1),szSONICHOtable(2:end),'UniformOutput',0); 
+SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = cellfun(@(X) permute(X,[1 8 (2:7)]),mat2cell(SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}),...
+    auxOnes{:},2*NFS+1),'UniformOutput',0);
+clear SONICHOtable;
+end
 % 2.1 SONIC functions (rate, Veff, Zeff, Cmeff, ngend)
 QmRange = SONICtable.QmRange; USPaRange = SONICtable.USPaRange; 
 USfreqRange = SONICtable.USfreqRange; aBLSRange = SONICtable.aBLSRange;
@@ -502,11 +526,11 @@ for i = 1:length(SONICrates)
 rt.(SONICrates{i}) = min(SONICtable.(SONICrates{i}),maxRate);
 rt.(SONICrates{i}) = reshape(permute(rt.(SONICrates{i})(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]),resh);
 end
-tempf6Veff = @(queryC) interpn(interpgrid{:},Veff2NFSp4D,queryC{:},'linear');
-tempf6Zeff = @(queryC) interpn(interpgrid{:},Zeff2NFSp4D,queryC{:},'linear');
-tempf6Cmeff = @(queryC) interpn(interpgrid{:},Cmeff2NFSp4D,queryC{:},'linear');
-tempf6ngend = @(queryC) interpn(interpgrid{:},ngend2NFSp4D,queryC{:},'linear');
-tempf6cfit = @(queryC) cellfun(@(X) interpn(interpgrid{:},X,queryC{:},'linear'),cfit2NFSp4Dcell); 
+tempf6Veff = @(queryC) interpn(interpgrid{:},Veff2NFSp4D,queryC{:},interpMethod);
+tempf6Zeff = @(queryC) interpn(interpgrid{:},Zeff2NFSp4D,queryC{:},interpMethod);
+tempf6Cmeff = @(queryC) interpn(interpgrid{:},Cmeff2NFSp4D,queryC{:},interpMethod);
+tempf6ngend = @(queryC) interpn(interpgrid{:},ngend2NFSp4D,queryC{:},interpMethod);
+tempf6cfit = @(queryC) cellfun(@(X) interpn(interpgrid{:},X,queryC{:},interpMethod),cfit2NFSp4Dcell); 
 
 f6Veff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Veff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ))); % DeltaQm/psiQ are NFSx1 and (NFS-1)x1 column vectors
 f6Zeff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Zeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
@@ -524,7 +548,7 @@ f6rt = struct; f5rt = struct; tempf6rt = struct;
 VecVeffPa = zeros(1,length(QmRange));
 VecrtPa = struct; f1rt0 = struct; f1rtPa = struct;
 for i = 1:length(SONICrates)
-tempf6rt.(SONICrates{i}) = @(queryC) interpn(interpgrid{:},rt.(SONICrates{i}),queryC{:},'linear');
+tempf6rt.(SONICrates{i}) = @(queryC) interpn(interpgrid{:},rt.(SONICrates{i}),queryC{:},interpMethod);
 f6rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6rt.(SONICrates{i})(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));   
 f5rt.(SONICrates{i}) = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6rt.(SONICrates{i})(Qm,USPa,USfreq,a,DeltaQm,psiQ); 
 end
@@ -759,7 +783,8 @@ elseif MODEL == 14
     U(5),U(6),U(7),U(8),Gna,Vna,Gk,Vk,Gl,Vl,f1Veff0,f1VeffPa,f1rt0,f1rtPa,f1rtVp,SONICgates,...
     Cm0,a,fBLS,RSI,proteinMode,gateMultip),tspan,Y0f,OdeOpts);
 end
-TvaluesY = vertcat(TvaluesY,t); Y = vertcat(Y,U); FC0 = FC; Qm0 = Y(end,1); Y0f = Y(end,:); FCm = horzcat(FCm,FC); %#ok<AGROW>
+TvaluesY = vertcat(TvaluesY,t); Y = vertcat(Y,U); FC0 = FC; Qm0 = Y(end,1); Y0f = Y(end,:); %#ok<AGROW>
+if ZONE == 2, FCm = horzcat(FCm,FC); end  %#ok<AGROW>
 tCURRENT=t(end);
 end
 end
@@ -787,13 +812,13 @@ NeuronActivated = NeuronActivated1||NeuronActivated2;
 APtimes = {APtimes1';APtimes2'};
 
 if MODE == 2
-SaveStr=['nanoMC-APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
+SaveStr=['nanoMC-Qosc-APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 save(SaveStr,'APtimes');
 
-SaveStr2=['nanoMC-Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
+SaveStr2=['nanoMC-Qosc-Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
@@ -818,7 +843,7 @@ end
 end
 if DISPLAY
 disp(' '); %#ok<*UNRCH>
-Checkpoint=['nanoMC-CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
+Checkpoint=['nanoMC-Qosc-CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
         num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr];
@@ -828,7 +853,7 @@ end
 end
 end
 if MODE == 1
-SaveStr=['nanoMC-Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
+SaveStr=['nanoMC-Qosc-Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
     USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];    
@@ -850,7 +875,7 @@ tline = (0:0.025/USfreq:Tsim)'; QoscBLS = zeros(size(tline));
 for i = 1:numel(tline)
 if ~(tline(i) <=USpstart || tline(i) >=USpstart+USpd)  
 j = ceil((tline(i)-USpstart)/Tupdate);
-QoscBLS(i) = cos(2*pi*USfreq*tline(i)+[0,fc2phiQ(FCm(:,j))'])*fc2DeltaQm(FCm(:,j));
+QoscBLS(i) = cos(2*pi*USfreq*tline(i)+fc2phiQ(FCm(:,j))')*fc2DeltaQm(FCm(:,j));
 end
 end
 QoscP = -(fBLS/(1-fBLS))*QoscBLS; Qosc = {QoscBLS;QoscP};
