@@ -99,10 +99,18 @@ maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,a
 % Computationally, very high maxRate will increase the stiffness of the set of equations, without important alterations in the solution set 
 % (e.g. for all practical purposes, gate opening from 0->1 in 1 us is equal to infinitely fast opening) 
 Tupdate = 50e-6;           % Update of fourier coefficients [s]
-pretabulSONIC = 0;         % If 1, map SONIC-table to 1D every Tupdate and use nakeinterp1 (implies linear interpolation) 
-tableVersion = '-v2-up5_spline'; 
-HomogeneousInput = 1;      % If 1, SONICtables are input homogeneously to reduce memory requirements
 fminTolFun = 1e-20; fminTolX = 1e-20;    % fminsearch tolerances (default is 1e-4 for tolfun and tolX). Should be stable w.r.t. starting point
+
+HomogeneousInput = 1;      % If 1, SONICtables are input homogeneously to reduce memory requirements
+pretabulSONIC = 0;         % If 1, map SONIC-table to 1D every Tupdate and use nakeinterp1 (implies linear interpolation) 
+sredpfaf = 1;              % Singleton reduction of pressure (p), frequency (f) and bilayer sonophore radius (a) and sonophore coverage.
+% SONICrun_nanoMC_Qosc interpolates the SONIC table for Q_m, USPa, USfreq,
+% aBLS, deltaQm and deltaPsiQ (fBLS = 1 at the BLS and 0 at the protein islands)
+% --Consequentially ,every dimension has to have sufficient samples for this interpolation step 
+% (2 for linear and makima; 4 for spline, pchip and cubic). If only a single pressure, bilayer radius and frequency
+% are tabulated, the dimensions need singleton expansion (e.g. with sx4SONIC.m). With sredpfaf = 1 however, 
+% USPa, USfreq and aBLS will be treated as singleton dimensions and not interpolated, saving considerable memory).
+tableVersion = '-v2-up_DeltaQm10_phiQ2_makima'; 
 interpMethod = 'linear';
 
 tic;
@@ -476,12 +484,14 @@ ESi = @ (t) ESipa*ESstep(t);  % [A/m^2]
 RSI = (rhoi/(2*pi*deffV))*log((a+a/sqrt(fBLS))/a);           % Axial resistance (Ohm)
 
 % 2b. General important functions
+sredpfafStr = ''; mindims = 0; mdimx = 0;  % mindims = 4*sradpfaf, takes into account all the singleton dims (USPa,USfreq,aBLS,fBLS), mdimx = 3*(sredpfaf)(USPa, USfreq,aBLS)
+if (sredpfaf), mindims = 4; mdimx = 3; sredpfafStr = '_sredpfaf'; end 
 if ~HomogeneousInput
-SONIC = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '.mat']); 
+SONIC = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion sredpfafStr '.mat']); 
 SONICtable = SONIC.SONICtable;
 else
-SONICinfo = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '_HO_info.mat']);    
-SONICHOtable = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion '_HO.mat']);
+SONICinfo = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion sredpfafStr '_HO_info.mat']);    
+SONICHOtable = load(['SONIC-' modelName '-QoscFourier' num2str(NFS) '-FourierIn' num2str(NFS) tableVersion sredpfafStr '_HO.mat']);
 
 szSONICHOtable = num2cell(size(SONICHOtable.HO_SONIC));
 SONICHOtable = mat2cell(SONICHOtable.HO_SONIC,ones(szSONICHOtable{1},1),szSONICHOtable{2:end});
@@ -491,12 +501,12 @@ for i = 1:numel(SONICinfo.HO_SONICinfo.SONICnames)-1
 SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{i}) = permute(SONICHOtable{i},[(2:numel(szSONICHOtable)),1]);
 end
 for j = 1:2*NFS+1
-SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = cat(8,SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}),...
+SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = cat(8-mindims,SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}),...
     permute(SONICHOtable{numel(SONICinfo.HO_SONICinfo.SONICnames)+j-1},...
     [(2:numel(szSONICHOtable)),1]));
 end
 auxOnes = cellfun(@(X) ones(X,1),szSONICHOtable(2:end),'UniformOutput',0); 
-SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = cellfun(@(X) permute(X,[1 8 (2:7)]),mat2cell(SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}),...
+SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}) = cellfun(@(X) permute(X,[1 8-mindims (2:7-mindims)]),mat2cell(SONICtable.(SONICinfo.HO_SONICinfo.SONICnames{end}),...
     auxOnes{:},2*NFS+1),'UniformOutput',0);
 clear SONICHOtable;
 end
@@ -505,52 +515,81 @@ QmRange = SONICtable.QmRange; USPaRange = SONICtable.USPaRange;
 USfreqRange = SONICtable.USfreqRange; aBLSRange = SONICtable.aBLSRange;
 DeltaQmRange = SONICtable.DeltaQmRange; psiQRange = SONICtable.psiQRange;
 
-Veff6D = permute(SONICtable.Veff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); Zeff6D = permute(SONICtable.Zeff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); 
-Cmeff6D = permute(SONICtable.Cmeff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); ngend6D = permute(SONICtable.ngend(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]);       % Note: Compartment 1 has full sonophore coverage -> don't use SONIC-xfs tables!
-cfit6D = permute(SONICtable.cfit(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]);
+if (sredpfaf) && (sqrt(2*rhol*c*USipa) ~= USPaRange || USfreq ~= USfreqRange || aBLS ~= aBLSRange || MODE ~= 2)
+    error('Singleton reduced dimensions flag is on, but one of the singleton dimensions does not match the SONICtable');
+end
+
+if (sredpfaf)          
+Veff6mdimxD = SONICtable.Veff; Zeff6mdimxD = SONICtable.Zeff; 
+Cmeff6mdimxD = SONICtable.Cmeff; ngend6mdimxD = SONICtable.ngend;      
+cfit6mdimxD = SONICtable.cfit;
+
+resh = [numel(QmRange),repmat(numel(DeltaQmRange),[1,NFS]),repmat(numel(psiQRange),[1,NFS])];
+reshC = num2cell(resh);
+interpgrid = horzcat({QmRange},repmat({DeltaQmRange},[1,NFS]),repmat({psiQRange},[1,NFS]));
+else
+Veff6mdimxD = permute(SONICtable.Veff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); Zeff6mdimxD = permute(SONICtable.Zeff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); 
+Cmeff6mdimxD = permute(SONICtable.Cmeff(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]); ngend6mdimxD = permute(SONICtable.ngend(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]);       % Note: Compartment 1 has full sonophore coverage -> don't use SONIC-xfs tables!
+cfit6mdimxD = permute(SONICtable.cfit(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]);
 
 resh = [numel(QmRange),numel(USPaRange),numel(USfreqRange),numel(aBLSRange),repmat(numel(DeltaQmRange),[1,NFS]),repmat(numel(psiQRange),[1,NFS])];
 reshC = num2cell(resh);
 interpgrid = horzcat({QmRange},{USPaRange},{USfreqRange},{aBLSRange},repmat({DeltaQmRange},[1,NFS]),repmat({psiQRange},[1,NFS]));
+end
+Veff2NFSp4mdimxD = reshape(Veff6mdimxD,resh); Zeff2NFSp4mdimxD = reshape(Zeff6mdimxD,resh); Cmeff2NFSp4mdimxD = reshape(Cmeff6mdimxD,resh);
+ngend2NFSp4mdimxD = reshape(ngend6mdimxD,resh); cfit2NFSp4mdimxD = reshape(cfit6mdimxD,resh);
+cfit2NFSp4mdimxDcell = permute(mat2cell(cell2mat(cellfun(@(X)permute(X',[2*NFS+5-mdimx,(2:2*NFS+4-mdimx),1]),cfit2NFSp4mdimxD,'UniformOutput',0)),reshC{:},ones(2*NFS+1,1)),[2*NFS+5-mdimx,(1:2*NFS+4-mdimx)]);
 
-Veff2NFSp4D = reshape(Veff6D,resh); Zeff2NFSp4D = reshape(Zeff6D,resh); Cmeff2NFSp4D = reshape(Cmeff6D,resh);
-ngend2NFSp4D = reshape(ngend6D,resh); cfit2NFSp4D = reshape(cfit6D,resh);
-cfit2NFSp4Dcell = permute(mat2cell(cell2mat(cellfun(@(X)permute(X',[2*NFS+5,(2:2*NFS+4),1]),cfit2NFSp4D,'UniformOutput',0)),reshC{:},ones(2*NFS+1,1)),[2*NFS+5,(1:2*NFS+4)]);
-
-% rate 6D sonic tables
+% rate 6D-mindims sonic tables
 SONICfields = fieldnames(SONICtable);
 SONICrates = sort(SONICfields(cellfun(@(X) contains(X,'a_')|contains(X,'apb_'),SONICfields)));
 SONICgates = cellfun(@(X) X(3:end),SONICrates(cellfun(@(X) contains(X,'a_'),SONICrates)),'UniformOutput',0); 
 rt = struct;
 for i = 1:length(SONICrates)
 rt.(SONICrates{i}) = min(SONICtable.(SONICrates{i}),maxRate);
+if (sredpfaf)
+rt.(SONICrates{i}) = reshape(rt.(SONICrates{i}),resh);
+else
 rt.(SONICrates{i}) = reshape(permute(rt.(SONICrates{i})(:,:,:,:,1,:,:),[1 2 3 4 6 7 5]),resh);
 end
-tempf6Veff = @(queryC) interpn(interpgrid{:},Veff2NFSp4D,queryC{:},interpMethod);
-tempf6Zeff = @(queryC) interpn(interpgrid{:},Zeff2NFSp4D,queryC{:},interpMethod);
-tempf6Cmeff = @(queryC) interpn(interpgrid{:},Cmeff2NFSp4D,queryC{:},interpMethod);
-tempf6ngend = @(queryC) interpn(interpgrid{:},ngend2NFSp4D,queryC{:},interpMethod);
-tempf6cfit = @(queryC) cellfun(@(X) interpn(interpgrid{:},X,queryC{:},interpMethod),cfit2NFSp4Dcell); 
+end
+tempf6mdimxVeff = @(queryC) interpn(interpgrid{:},Veff2NFSp4mdimxD,queryC{:},interpMethod);
+tempf6mdimxZeff = @(queryC) interpn(interpgrid{:},Zeff2NFSp4mdimxD,queryC{:},interpMethod);
+tempf6mdimxCmeff = @(queryC) interpn(interpgrid{:},Cmeff2NFSp4mdimxD,queryC{:},interpMethod);
+tempf6mdimxngend = @(queryC) interpn(interpgrid{:},ngend2NFSp4mdimxD,queryC{:},interpMethod);
+tempf6mdimxcfit = @(queryC) cellfun(@(X) interpn(interpgrid{:},X,queryC{:},interpMethod),cfit2NFSp4mdimxDcell); 
 
-f6Veff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Veff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ))); % DeltaQm/psiQ are NFSx1 and (NFS-1)x1 column vectors
-f6Zeff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Zeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
-f6Cmeff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6Cmeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
-f6ngend= @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6ngend(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));  
-f6cfit = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6cfit(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
+if (sredpfaf)
+f3Veff = @(Qm,DeltaQm,psiQ) tempf6mdimxVeff(num2cell(vertcat(Qm,DeltaQm,psiQ))); % DeltaQm/psiQ are NFSx1 and (NFS-1)x1 column vectors
+f3Zeff = @(Qm,DeltaQm,psiQ) tempf6mdimxZeff(num2cell(vertcat(Qm,DeltaQm,psiQ)));
+f3Cmeff = @(Qm,DeltaQm,psiQ) tempf6mdimxCmeff(num2cell(vertcat(Qm,DeltaQm,psiQ)));
+f3ngend= @(Qm,DeltaQm,psiQ) tempf6mdimxngend(num2cell(vertcat(Qm,DeltaQm,psiQ)));  
+f3cfit = @(Qm,DeltaQm,psiQ) tempf6mdimxcfit(num2cell(vertcat(Qm,DeltaQm,psiQ)));
+else
+f6Veff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6mdimxVeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ))); % DeltaQm/psiQ are NFSx1 and (NFS-1)x1 column vectors
+f6Zeff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6mdimxZeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
+f6Cmeff = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6mdimxCmeff(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
+f6ngend= @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6mdimxngend(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));  
+f6cfit = @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6mdimxcfit(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));
 
 f5Veff = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6Veff(Qm,USPa,USfreq,a,DeltaQm,psiQ); 
 f5Zeff = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6Zeff(Qm,USPa,USfreq,a,DeltaQm,psiQ); %#ok<*NASGU>
 f5Cmeff = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6Cmeff(Qm,USPa,USfreq,a,DeltaQm,psiQ);
 f5ngend = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6ngend(Qm,USPa,USfreq,a,DeltaQm,psiQ);
 f5cfit = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6cfit(Qm,USPa,USfreq,a,DeltaQm,psiQ);
+end
 
-f6rt = struct; f5rt = struct; tempf6rt = struct;
+f6rt = struct; f5rt = struct; tempf6mdimxrt = struct; f3rt = struct;
 VecVeffPa = zeros(1,length(QmRange));
 VecrtPa = struct; f1rt0 = struct; f1rtPa = struct;
 for i = 1:length(SONICrates)
-tempf6rt.(SONICrates{i}) = @(queryC) interpn(interpgrid{:},rt.(SONICrates{i}),queryC{:},interpMethod);
-f6rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6rt.(SONICrates{i})(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));   
+tempf6mdimxrt.(SONICrates{i}) = @(queryC) interpn(interpgrid{:},rt.(SONICrates{i}),queryC{:},interpMethod);
+if (sredpfaf)
+f3rt.(SONICrates{i}) =  @(Qm,DeltaQm,psiQ) tempf6mdimxrt.(SONICrates{i})(num2cell(vertcat(Qm,DeltaQm,psiQ)));   
+else
+f6rt.(SONICrates{i}) =  @(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ) tempf6mdimxrt.(SONICrates{i})(num2cell(vertcat(Qm,USPa,USfreq,aBLS,DeltaQm,psiQ)));   
 f5rt.(SONICrates{i}) = @(Qm,USPa,USfreq,DeltaQm,psiQ) f6rt.(SONICrates{i})(Qm,USPa,USfreq,a,DeltaQm,psiQ); 
+end
 end
 fVCa = @(cCai) 10^(3)*((Rg*Temp)/(2*Far))*log(cCae./cCai); % Nernst equation for Ca-potential [mV] (if not assumed constant)
 
@@ -594,8 +633,6 @@ fc2phiQ = @(X) mod(-atan2(X(~~repmat([0;1],NFS,1)),X(~~repmat([1;0],NFS,1))),2*p
 FC0 = zeros(2*NFS,1);           % Initial fourier components [A1;B1;A2;B2;...] of the bilayer sonophore
 flipFC = reshape(flip(reshape((1:2*NFS),2,[])),[],1);  
 
-fQosc = @(Qm,USPa,X) X-10^(-3)*repmat([1;-1],NFS,1).*(index(index(f5cfit(Qm,USPa,USfreq,fc2DeltaQm(X),fc2phiQ(X)),(2:2*NFS+1)),flipFC)+1000*(fBLS/(1-fBLS))*X(flipFC)./Cm0)./...
-    (cumsum(repmat([1;0],NFS,1))*(2*pi*USfreq)*RSI*pi*aBLS^2);              % Charge oscillation equation       (Note: second term with + sign, because FCs_{compartment2} ~ -FCs_{compartment1}
 tPeriod = (0:0.025/USfreq:1/USfreq)'; 
 for j = 1:length(SONICrates)
 f1rtVQosc.(SONICrates{j}) = @(Veff,FC)  (1/(tPeriod(end)-tPeriod(1)))*trapz(tPeriod,f1rtV.(SONICrates{j})(1000*((Cm0*1e-3*Veff).*ones(size(tPeriod))+cos(2*pi*USfreq*bsxfun(@times,(1:1:numel(fc2DeltaQm(FC))),tPeriod)+fc2phiQ(FC)')*fc2DeltaQm(FC))./Cm0));
@@ -623,6 +660,18 @@ elseif MODE == 2
 USPa = sqrt(2*rhol*c*USipa);
 USPaT = @ (t) USPa*USstep(t); 
 end
+if ~(sredpfaf)
+f3Veff = @(Qm,DeltaQm,phiQ) f5Veff(Qm,USPa,USfreq,DeltaQm,phiQ);  %#ok<*NODEF>
+f3Zeff = @(Qm,DeltaQm,phiQ) f5Zeff(Qm,USPa,USfreq,DeltaQm,phiQ); 
+f3Cmeff = @(Qm,DeltaQm,phiQ) f5Cmeff(Qm,USPa,USfreq,DeltaQm,phiQ);
+f3ngend = @(Qm,DeltaQm,phiQ) f5ngend(Qm,USPa,USfreq,DeltaQm,phiQ);
+f3cfit = @(Qm,DeltaQm,phiQ) f5cfit(Qm,USPa,USfreq,DeltaQm,phiQ);
+for i = 1:length(SONICrates)
+f3rt.(SONICrates{i}) = @(Qm,DeltaQm,phiQ) f5rt.(SONICrates{i})(Qm,USPa,USfreq,DeltaQm,phiQ);
+end
+end
+fQosc = @(Qm,X) X-10^(-3)*repmat([1;-1],NFS,1).*(index(index(f3cfit(Qm,fc2DeltaQm(X),fc2phiQ(X)),(2:2*NFS+1)),flipFC)+1000*(fBLS/(1-fBLS))*X(flipFC)./Cm0)./...
+    (cumsum(repmat([1;0],NFS,1))*(2*pi*USfreq)*RSI*pi*aBLS^2);              % Charge oscillation equation       (Note: second term with + sign, because FCs_{compartment2} ~ -FCs_{compartment1}
 
 Y0f = [Y0;Y0]; FCm = [];
 TvaluesY = [0]; Y = Y0f'; %#ok<NBRAK>
@@ -673,7 +722,7 @@ if iUP==nUP
     tspan(2) = tSONICc(2);
 end
 optimops = optimset('TolFun',fminTolFun,'TolX',fminTolX);           
-FC = fminsearch(@(X) sum(fQosc(Qm0,USPa,X).^2),FC0);
+FC = fminsearch(@(X) sum(fQosc(Qm0,X).^2),FC0);
 for k=1:length(SONICrates)
 f1rtVp.(SONICrates{k}) = @(V) f1rtVQosc.(SONICrates{k})(V,-(fBLS/(1-fBLS))*FC);         % f1rtV at the proteins with oscillations
 end
@@ -685,12 +734,12 @@ end
 
 if pretabulSONIC
 for i = 1:length(QmRange)
-VecVeffPa(i) = f5Veff(QmRange(i),USPa,USfreq,fc2DeltaQm(FC),fc2phiQ(FC));
+VecVeffPa(i) = f3Veff(QmRange(i),fc2DeltaQm(FC),fc2phiQ(FC));
 end
 for j = 1:length(SONICrates)
 VecrtPa.(SONICrates{j}) = zeros(1,length(QmRange));
 for i = 1:length(QmRange)
-VecrtPa.(SONICrates{j})(i) = f5rt.(SONICrates{j})(QmRange(i),USPa,USfreq,fc2DeltaQm(FC),fc2phiQ(FC));
+VecrtPa.(SONICrates{j})(i) = f3rt.(SONICrates{j})(QmRange(i),fc2DeltaQm(FC),fc2phiQ(FC));
 end
 f1rt0.(SONICrates{j}) = @(Q) f1rtV.(SONICrates{j})(1000*Q/Cm0);
 f1rtPa.(SONICrates{j}) = @(Q) nakeinterp1(QmRange',VecrtPa.(SONICrates{j}),Q);
@@ -699,10 +748,10 @@ f1Veff0 = @(Q) 1000*Q/Cm0;
 f1VeffPa = @(Q) nakeinterp1(QmRange',VecVeffPa,Q);
 else          % No pretabulation
 f1Veff0 = @(Q) 1000*Q/Cm0;
-f1VeffPa = @(Q) f5Veff(Q,USPa,USfreq,fc2DeltaQm(FC),fc2phiQ(FC));
+f1VeffPa = @(Q) f3Veff(Q,fc2DeltaQm(FC),fc2phiQ(FC));
 for j = 1:length(SONICrates)
 f1rt0.(SONICrates{j}) = @(Q) f1rtV.(SONICrates{j})(1000*Q/Cm0);
-f1rtPa.(SONICrates{j}) = @(Q) f5rt.(SONICrates{j})(Q,USPa,USfreq,fc2DeltaQm(FC),fc2phiQ(FC));
+f1rtPa.(SONICrates{j}) = @(Q) f3rt.(SONICrates{j})(Q,fc2DeltaQm(FC),fc2phiQ(FC));
 end
 end
 
@@ -892,15 +941,21 @@ if ~exist('SONICgatesN','var'), SONICgatesN = SONICgates; end
 if PLOT == 2
 SaveDataStr=['Qosc_nanoMC-Data(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
 num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
-USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
+num2str(USipa) ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
     num2str(ESprf) ',' ESisppa ')--(aBLS,fBLS)=(' num2str(aBLS) ',' num2str(fBLS) ')' modeStr '.mat'];
 TvaluesYms = 10^(3)*TvaluesY'; % [ms]
 saveData.TvaluesYms = TvaluesYms; saveData.Charge1 = Charge1; saveData.Charge2=Charge2; saveData.Chargetot = Chargetot;
 saveData.Y1 = Y1; saveData.Y2 = Y2;
 saveData.tline = tline; saveData.Qosc = Qosc; saveData.FCm = FCm;
+if (sredpfaf)
+saveData.f3Veff = f3Veff; saveData.f3Zeff = f3Zeff;
+saveData.f3Cmeff = f3Cmeff; saveData.f3ngend = f3ngend;
+saveData.f3cfit = f3cfit;
+else
 saveData.f5Veff = f5Veff; saveData.f5Zeff = f5Zeff;
 saveData.f5Cmeff = f5Cmeff; saveData.f5ngend = f5ngend;
 saveData.f5cfit = f5cfit;
+end
 save(SaveDataStr,'saveData','-v7.3');
 end
 if PLOT == 1
