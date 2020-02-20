@@ -110,7 +110,7 @@ sredpfaf = 1;              % Singleton reduction of pressure (p), frequency (f) 
 % (2 for linear and makima; 4 for spline, pchip and cubic). If only a single pressure, bilayer radius and frequency
 % are tabulated, the dimensions need singleton expansion (e.g. with sx4SONIC.m). With sredpfaf = 1 however, 
 % USPa, USfreq and aBLS will be treated as singleton dimensions and not interpolated, saving considerable memory).
-tableVersion = '-v2-up_DeltaQm10_phiQ2_makima'; 
+tableVersion = '-v2-up_DeltaQm4_phiQ2_makima'; 
 interpMethod = 'linear';
 
 tic;
@@ -722,7 +722,7 @@ if iUP==nUP
     tspan(2) = tSONICc(2);
 end
 optimops = optimset('TolFun',fminTolFun,'TolX',fminTolX);           
-FC = fminsearch(@(X) sum(fQosc(Qm0,X).^2),FC0);
+FC = fminsearch(@(X) sum(fQosc(Qm0,X).^2),FC0,optimops);
 for k=1:length(SONICrates)
 f1rtVp.(SONICrates{k}) = @(V) f1rtVQosc.(SONICrates{k})(V,-(fBLS/(1-fBLS))*FC);         % f1rtV at the proteins with oscillations
 end
