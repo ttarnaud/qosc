@@ -1,8 +1,9 @@
-MODEL = 1;
+MODEL = 4;
 switch MODEL
     case 1, modelStr = 'RS'; modelName = 'regular spiking';
     case 2, modelStr = 'FS'; modelName = 'fast spiking';
     case 3, modelStr = 'LTS'; modelName = 'low threshold spiking';
+    case 4, modelStr = 'STN'; modelName = 'Subthalamic nucleus';
 end
 modelStr = ['SONIC-' modelStr '.mat'];
 l = load(modelStr,'SONICtable');
@@ -50,7 +51,7 @@ for i = 1:length(Pa)
 FieldName = SONICfields{j};
 Y = SONICtable.(FieldName);
 if strcmp(FieldName(1:3),'apb')
-Y = Y-SONICtable.(['a_' FieldName(5)]);   
+Y = Y-SONICtable.(['a_' FieldName(5:end)]);   
 end
 if i == 1               % No pressure
 plot(10^5*Q,UnitsScale(j)*Y(:,i,3,2),'color','k','linestyle','--','linewidth',2);
@@ -75,7 +76,7 @@ for i = 1:length(Freq)
 FieldName = SONICfields{j};
 Y = SONICtable.(FieldName);
 if strcmp(FieldName(1:3),'apb')
-Y = Y-SONICtable.(['a_' FieldName(5)]);   
+Y = Y-SONICtable.(['a_' FieldName(5:end)]);   
 end
 plot(10^5*Q,UnitsScale(j)*Y(:,37,i,2),'color',greenCmap(1+round((size(greenCmap,1)-1)*(Freq(i)/Freq(end))),:));
 end
@@ -96,7 +97,7 @@ for i = 1:length(aBLS)
 FieldName = SONICfields{j};
 Y = SONICtable.(FieldName);
 if strcmp(FieldName(1:3),'apb')
-Y = Y-SONICtable.(['a_' FieldName(5)]);   
+Y = Y-SONICtable.(['a_' FieldName(5:end)]);   
 end
 plot(10^5*Q,UnitsScale(j)*Y(:,37,3,i),'color',blueCmap(1+round((size(blueCmap,1)-1)*(aBLS(i)/aBLS(end))),:));
 end

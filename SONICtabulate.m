@@ -10,6 +10,7 @@ fBLSRange = 1;                                           %#ok<*NASGU> % Membrane
 psiQRange = 0;
 DeltaQmRange = 0;
 saveStrAdd = '';
+nosx = 1;               % Bool, if 1: no singleton expansion (sx)
 
 % DeltaQmRange tables (outcomment for normal tables)
 DeltaQmRange = (0*10^(-5):25*10^(-5):500*10^(-5));  
@@ -203,6 +204,7 @@ end
     end
 end
 
+if ~(nosx)
 fn = fieldnames(SONICtable);  
 % If a dimension of the 5D table is a singleton, interpn will fail, because
 % it needs at least 2 points in each direction. 
@@ -250,7 +252,8 @@ for i = 1:length(fn)
 SONICtable.(fn{i}) = repmat(SONICtable.(fn{i}),[1 1 1 1 1 1 2]);
 end
 end
-    
+end
+
 SONICtable.QmRange = QmRange;
 SONICtable.aBLSRange = aBLSRange;
 SONICtable.USfreqRange = USfreqRange; 

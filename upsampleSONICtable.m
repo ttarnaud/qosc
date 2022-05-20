@@ -8,10 +8,10 @@
 % In the current version, only one dimension will be upsampled
 
 clear all; clc; 
-tableVersion = '-v2';               % Note: spline, pchip and cubic need 4 samples in every direction: use singleton expansion (sx). (Makima only requires 2 samples)
+tableVersion = '-v2xtra-p1';               % Note: spline, pchip and cubic need 4 samples in every direction: use singleton expansion (sx). (Makima only requires 2 samples)
 modelName = 'RS';
 NFS = 2;
-UpsampleFactor = [4,2,5];           % Upsample factor of dim: [DeltaQm,phiQ,Qm]
+UpsampleFactor = [8,2,1];           % Upsample factor of dim: [DeltaQm,phiQ,Qm]
 UpsampleMethod = 'makima';
 HomogeneousOutput = 1;              % To reduce memory requirements, HomogeneousOutput==1 gets rid of cells/structs/...
 sredpfaf = 1;                       % If 1, pressure (p), frequency (f), bilayer radius (a) and coverage (f_BLS) 

@@ -10,9 +10,11 @@ error('Not enough input arguments');
 end
 end
 end
-proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1';
-if length(varargin) > 3 , disp('Warning: extra input parameters will be ignored'); end
-if length(varargin) >= 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
+proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1'; deffVs = '100e-9';
+if length(varargin) > 4 , disp('Warning: extra input parameters will be ignored'); end
+if length(varargin) >= 4, proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3}; deffVs = varargin{4};
+ modeStr = ['-(proteinMode,threshMode,gateMultip,deffV)=(' proteinMode ',' threshMode ',' gateMultip ',' deffVs ')']; end
+if length(varargin) == 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
  modeStr = ['-(proteinMode,threshMode,gateMultip)=(' proteinMode ',' threshMode ',' gateMultip ')']; end
 if length(varargin) == 2, proteinMode = varargin{1}; threshMode = varargin{2};
  modeStr = ['-(proteinMode,threshMode)=(' proteinMode ',' threshMode ')']; end
@@ -98,7 +100,7 @@ maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,a
 
 tic;
 % 1a. Multicompartmental parameters
-deffV = 100*10^(-9);   % The effective depth beneath the membrane area for axial current calculations (m)
+deffV = str2double(deffVs);    % The effective depth beneath the membrane area for axial current calculations (m)
 rhoi = 1;            % axoplasmatic resistivity (Ohm*m)
 % 1b. General parameters
 Qthresh = 0;            % Threshold for Q for AP-discrimination [nC/cm^2]

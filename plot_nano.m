@@ -127,8 +127,8 @@ plot(100*fBLSRange,ThreshPa(:,1,threshMode)*10^(-3),'linestyle','-','color','b',
 plot(100*fBLSRange,ThreshPa(:,2,threshMode)*10^(-3),'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,3,threshMode)*10^(-3),'linestyle','--','color','b','linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,4,threshMode)*10^(-3),'linestyle','--','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
-plot(100*fBLSRange,ThreshPa(:,5,threshMode)*10^(-3),'linestyle','-.','color','b','linewidth',2,'marker',markerStyle{threshMode});
-plot(100*fBLSRange,ThreshPa(:,6,threshMode)*10^(-3),'linestyle','-.','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
+plot(100*fBLSRange,ThreshPa(:,5,threshMode)*10^(-3),'linestyle',':','color','b','linewidth',2,'marker',markerStyle{threshMode});
+plot(100*fBLSRange,ThreshPa(:,6,threshMode)*10^(-3),'linestyle',':','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
 end
 xlabel('Sonophore coverage (%)');
 ylabel('Amplitude (kPa)');
@@ -137,7 +137,7 @@ LegendPlot(1) = plot(nan,'linestyle','-','color','b');
 LegendPlot(2) = plot(nan,'linestyle','-','color',[0.5 0.5 0.5]);
 LegendPlot(3) = plot(nan,'linestyle','-','color','k');
 LegendPlot(4) = plot(nan,'linestyle','--','color','k');
-LegendPlot(5) = plot(nan,'linestyle','-.','color','k');
+LegendPlot(5) = plot(nan,'linestyle',':','color','k');
 LegendPlot(6) = plot(nan,'marker','o','color','k');
 legendNames = {'Nanoscale multicompartmental SONIC';'Point-like SONIC';'Full protein coverage';'Partial protein coverage';'Partial coverage - modified channel gain';'Excitation at break'};
 
@@ -167,8 +167,8 @@ plot(100*fBLSRange,ThreshPa(:,1,threshMode)*10^(-3),'linestyle','-','color','b',
 plot(100*fBLSRange,ThreshPa(:,2,threshMode)*10^(-3),'linestyle','-','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,3,threshMode)*10^(-3),'linestyle','--','color','b','linewidth',2,'marker',markerStyle{threshMode});
 plot(100*fBLSRange,ThreshPa(:,4,threshMode)*10^(-3),'linestyle','--','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
-plot(100*fBLSRange,ThreshPa(:,5,threshMode)*10^(-3),'linestyle','-.','color','b','linewidth',2,'marker',markerStyle{threshMode});
-plot(100*fBLSRange,ThreshPa(:,6,threshMode)*10^(-3),'linestyle','-.','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
+plot(100*fBLSRange,ThreshPa(:,5,threshMode)*10^(-3),'linestyle',':','color','b','linewidth',2,'marker',markerStyle{threshMode});
+plot(100*fBLSRange,ThreshPa(:,6,threshMode)*10^(-3),'linestyle',':','color',[0.5 0.5 0.5],'linewidth',2,'marker',markerStyle{threshMode});
 if (i==2)
 if threshMode==1
 LegendPlot(1) = plot(nan,'linestyle','-','color','b');
@@ -177,7 +177,7 @@ legendNames = {'Nanoscale multicompartmental model';'Point-like model'};
 else
 LegendPlot(1) = plot(nan,'linestyle','-','color','k');
 LegendPlot(2) = plot(nan,'linestyle','--','color','k');
-LegendPlot(3) = plot(nan,'linestyle','-.','color','k');
+LegendPlot(3) = plot(nan,'linestyle',':','color','k');
 legendNames = {'Full protein coverage';'Partial protein coverage';'Partial coverage - modified channel gain'};
 end
 leg(threshMode) = legend(LegendPlot,legendNames,'position',legPos{threshMode});

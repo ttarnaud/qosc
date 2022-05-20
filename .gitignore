@@ -1,2 +1,10 @@
-*.mat
+*.pdf
+*.docx
+*.txt
+*.log
 Results/
+measureRuntime/
+temps/
+ThreshSims/
+exe/
+SONICtables/

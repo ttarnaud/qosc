@@ -1,3 +1,6 @@
+plotNumber=1;
+NFS = [2,8];
+if (plotNumber == 1)||(plotNumber==0)
 MODEL = 1;
 QoscStr = {'-QoscFourier2-FourierIn1','-QoscFourier8-FourierIn1'};
 
@@ -23,8 +26,20 @@ DeltaQm = SONICtable.DeltaQmRange;
 psiQRange = SONICtable.psiQRange;
 
 % gof values
+incr = 0.001;
 rsquare = cellfun(@(X) X(2),SONICtable.gof);
-adjrsquare = cellfun(@(X) X(4),SONICtable.gof);
+dfeMatlab = cellfun(@(X) X(3),SONICtable.gof);    % degrees of freedom in the error 
+%(however, matlab-fit does not count fitvariables that do not vary due to bounds: Veff is not included!)
+% As a result in the calculation of adjrsquare, dfe is one unit too high
+% Now: dfeMatlab = numobj-2*NFS, correct: dfe = dfeMatlab-1;
+numobj = dfeMatlab+2*NFS(ii); dfe = dfeMatlab-1;
+adjrsquare = cellfun(@(X) X(4),SONICtable.gof); %#ok<NASGU>
+% Test: Wrong=(adjrsquare-(1-(1-rsquare).*(numobj-1)./(dfe+1)));
+% max(Wrong(:)) == 0; min(Wrong(:))== 0;
+
+% Fix adjrsquare:
+adjrsquare = (1-(1-rsquare).*(numobj-1)./(dfe));
+
 rsquare = permute(rsquare(:,:,1,1,1,:,1),[1 2 6 3 4 5]);
 adjrsquare = permute(adjrsquare(:,:,1,1,1,:,1),[1 2 6 3 4 5]);
 adjrsquareStr.(char('a' + ii-1)) = adjrsquare;
@@ -34,18 +49,18 @@ iPa = 51; iQm = 20; iDeltaQm = 1;
 colormap(cm_plasma(100));
 subplot(3,3,3+1+3*(ii-1)); hold on; surf(10^(-3)*Pa,10^5*DeltaQm,permute(adjrsquare(iQm,:,:),[3 2 1]),'edgecolor','none','facecolor','interp');
 if (ii==1), title(['Q_m = ' num2str(10^(5)*Q(iQm)) ' nC/cm^2']); end
-plot3(600,500,adjrsquare(iQm,end,end),'marker','x','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
-plot3(600,0,adjrsquare(iQm,end,1),'marker','x','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
-plot3(31,0,adjrsquare(iQm,31,1),'marker','o','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
-plot3(0,400,adjrsquare(iQm,1,17),'marker','o','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
+plot3(600,500,incr+adjrsquare(iQm,end,end),'marker','x','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
+plot3(600,0,incr+adjrsquare(iQm,end,1),'marker','x','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
+plot3(31,0,incr+adjrsquare(iQm,31,1),'marker','o','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
+plot3(0,400,5*incr+5*incr*(ii==1)+adjrsquare(iQm,1,17),'marker','o','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
 ylabel('\DeltaQ_m [nC/cm^2]'); xlabel('P_{US} [kPa]'); zlabel('\boldmath$\overline{R}^2$ [-]','interpreter','latex');
 view([106.5266 48.3254]); caxis manual; caxis([min(adjrsquare(:)),max(adjrsquare(:))]);
 xlim(10^(-3)*[Pa(1),Pa(end)]); ylim(10^5*[DeltaQm(1),DeltaQm(end)]); hold off;
 subplot(3,3,3+2+3*(ii-1));
 hold on;
 surf(10^(-3)*Pa,10^5*Q,adjrsquare(:,:,iDeltaQm),'edgecolor','none','facecolor','interp');
-plot3(600,-77.9,adjrsquare(iQm,end,1),'marker','x','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
-plot3(31,-77.9,adjrsquare(iQm,31,1),'marker','o','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
+plot3(600,-77.9,incr+adjrsquare(iQm,end,1),'marker','x','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
+plot3(31,-77.9,incr+adjrsquare(iQm,31,1),'marker','o','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
 if (ii == 1), title(['\DeltaQ_m = ' num2str(10^(5)*DeltaQm(iDeltaQm)) ' nC/cm^2']); end
 ylabel('Q_m [nC/cm^2]'); xlabel('P_{US} [kPa]');
 view([106.5266 48.3254]);  caxis manual; caxis([min(adjrsquare(:)),max(adjrsquare(:))]);
@@ -53,12 +68,12 @@ xlim(10^(-3)*[Pa(1),Pa(end)]); ylim(10^5*[Q(1),Q(end)]);
 hold off;
 subplot(3,3,3+3+3*(ii-1)); 
 hold on; surf(10^5*Q,10^5*DeltaQm,permute(adjrsquare(:,iPa,:),[3 1 2]),'edgecolor','none','facecolor','interp');
-plot3(-77.9,500,adjrsquare(iQm,end,end),'marker','x','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
-plot3(-77.9,0,adjrsquare(iQm,end,1),'marker','x','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
+plot3(-77.9,500,5*incr*(i==1)+incr+adjrsquare(iQm,end,end),'marker','x','color','b','markerfacecolor','b','markersize',10,'linewidth',2);
+plot3(-77.9,0,incr+adjrsquare(iQm,end,1),'marker','x','color','r','markerfacecolor','r','markersize',10,'linewidth',2);
 
 if (ii==1), title(['P_{US} = ' num2str(10^(-3)*Pa(iPa)) ' kPa']); end
 ylabel('\DeltaQ_m [nC/cm^2]'); xlabel('Q_m [nC/cm^2]');
-view([106.5266-90 48.3254]); colorbar;  caxis manual; caxis([min(adjrsquare(:)),max(adjrsquare(:))]);
+view([106.5266-90 48.3254]); cbar(ii)=colorbar;  caxis manual; caxis([min(adjrsquare(:)),max(adjrsquare(:))]);
 xlim(10^5*[Q(1),Q(end)]); ylim(10^5*[DeltaQm(1),DeltaQm(end)]);
 hold off;
 end
@@ -81,6 +96,7 @@ subplot(3,3,1);
 hold on; iff = 1;
 leg(1) = plot(nan,'color','k','linewidth',2,'linestyle','--','marker','none');
 leg(2) = plot(nan,'color','k','linewidth',2,'linestyle','-.','marker','none');
+leg(3) = plot(nan,'color','k','linewidth',2,'linestyle','-','marker','none');
 yyaxis left, plot(fitEx(iff).tPeriod-fitEx(iff).tPeriod(1),fitEx(iff).Vperiod,'color','b','linewidth',1.5);
 cf2 = plot(fitEx(iff).tPeriod-fitEx(iff).tPeriod(1),refitN(coeffvalues(fitEx(iff).cfit2),fitEx(iff).tPeriod,2),'b--'); set(cf2,'linewidth',2);
 cf8 = plot(fitEx(iff).tPeriod-fitEx(iff).tPeriod(1),refitN(coeffvalues(fitEx(iff).cfit8),fitEx(iff).tPeriod,8),'b-.'); set(cf8,'linewidth',2);
@@ -97,7 +113,7 @@ set(gca,'YColor','r')
 %ylabel('V [mV]');
 hold off;
 xlabel('time [\mus]');
-legend(leg,{'N_{FS}=2';'N_{FS}=8'},'location','westoutside'); xlim([0,max(fitEx(1).tPeriod(end)-fitEx(1).tPeriod(1),fitEx(2).tPeriod(end)-fitEx(2).tPeriod(1))]);
+legg = legend(leg,{'N_{FS}=2';'N_{FS}=8';'N_{FS}=\infty'},'location',[0.0345 0.8633 0.0630 0.1092]); xlim([0,max(fitEx(1).tPeriod(end)-fitEx(1).tPeriod(1),fitEx(2).tPeriod(end)-fitEx(2).tPeriod(1))]);
 set(gca,'xticklabels',num2cell(10^6*get(gca,'xtick')));
 
 subplot(3,3,2);
@@ -118,9 +134,13 @@ hold off;
 xlabel('time [\mus]');
 legend('off'); xlim([0,max(fitEx(3).tPeriod(end)-fitEx(3).tPeriod(1),fitEx(4).tPeriod(end)-fitEx(4).tPeriod(1))]);
 set(gca,'xticklabels',num2cell(10^6*get(gca,'xtick'))); set(gca,'YColor','r')
-set(findobj('type','axes'),'fontweight','bold','fontsize',15);
+set(cbar(1),'position',[0.8916 0.4255 0.0111 0.1807])
+set(cbar(2),'position',[0.8916 0.1259 0.0111 0.1807])
+set(findobj('type','axes'),'fontweight','bold','fontsize',17);
+end
 
 
+if (plotNumber==2)||(plotNumber==0)
 % cfit values
 FourierComps = cellfun(@(X) X(1,2:end-1),SONICtable.cfit,'UniformOutput',0); % Extract fourier components
 ConfI = cellfun(@(X) X(2:3,2:end-1),SONICtable.cfit,'UniformOutput',0); % Extract confidence intervals
@@ -154,7 +174,7 @@ for i = 1:length(SONICfields)
        case 'Veff', plotFields{i} = 'Veff [mV]'; UnitsScale(i) = 1;
        case 'Cmeff', plotFields{i} = 'Cmeff [\muF/cm^2]'; UnitsScale(i) = 100;
        case 'ngend', plotFields{i} = 'ngend [mole]';UnitsScale(i) = 1;
-       case 'ampV', plotFields{i} = 'V_{osc} [mV]'; UnitsScale(i) = 1;
+       case 'ampV', plotFields{i} = 'V_{osc}'; UnitsScale(i) = 1;
        %case 'DeltaPhi', plotFields{i} = '\Delta \phi [rad]'; UnitsScale(i) = 1;
        otherwise
            if contains(SONICfields{i},'a_')
@@ -162,7 +182,7 @@ for i = 1:length(SONICfields)
            elseif contains(SONICfields{i},'apb_')
                plotFields{i} =['b_' SONICfields{i}(5:end) '[1/ms]']; UnitsScale(i) = 0.001;
            elseif contains(SONICfields{i},'ampV')
-               plotFields{i} = [SONICfields{i} ' [mV]']; UnitsScale(i) = 1;
+               plotFields{i} = [SONICfields{i} '']; UnitsScale(i) = 1;
            elseif contains(SONICfields{i},'DeltaPhi')
                plotFields{i} = [SONICfields{i} ' [rad]']; UnitsScale(i) = 1;
            end
@@ -195,10 +215,12 @@ if (j==1), ylabel('Q [nC/cm^2]'); set(get(gca,'YLabel'),'Rotation',0,'Position',
 %colorbar;
 if strcmp(plotFields{j}(1:3),'amp')
 text(-0.3345,0.7937,plotFields{j}(4:end),'Units', 'Normalized', 'VerticalAlignment', 'Top','Fontweight','bold','fontsize',fs);
-text(0.9977,1.4594,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+text(0.9977,1.6010,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+if (j==1), text(0.9777,1.6010,'[mV]','Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs); end
 else
 text(-0.3345,0.7937,plotFields{j},'Units', 'Normalized', 'VerticalAlignment', 'Top','Fontweight','bold','fontsize',fs);
-text(0.9977,1.4594,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+text(0.9977,1.6010,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+if (j==1), text(0.9777,1.6010,'[mV]','Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs); end
 end
 if j == length(SONICfields)
 xlabel('P_{US} [kPa]');
@@ -230,13 +252,15 @@ if (j==1), ylabel('Q [nC/cm^2]'); set(get(gca,'YLabel'),'Rotation',0,'Position',
 %colorbar;
 if strcmp(plotFields{j}(1:3),'amp')
 %title([plotFields{j}(4:end) ' (' num2str(maxY,3) ')']);
-text(0.9977,1.4594,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+text(0.9977,1.6010,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+if (j==1), text(0.9777,1.6010,'[mV]','Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs); end
 else
 %title([plotFields{j} ' (' num2str(maxY,3) ')']);
-text(0.9977,1.4594,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+text(0.9977,1.6010,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs);
+if (j==1), text(0.9777,1.6010,'[mV]','Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs); end
 end
 if j == length(SONICfields)
-xlabel('\Delta Q [nC/cm^2]');
+xlabel('\Delta Q_m [nC/cm^2]');
 else 
 set(gca,'xtick',[]);   
 end
@@ -265,10 +289,12 @@ if (j==1), ylabel('P_{US} [kPa]'); set(get(gca,'YLabel'),'Rotation',0,'Position'
 if strcmp(plotFields{j}(1:3),'amp')
 %title([plotFields{j}(4:end) ' (' num2str(maxY,3) ')']);
 %title(plotFields{j}(4:end));
-text(0.9977,1.4594,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','HorizontalAlignment','right','Fontweight','bold','fontsize',fs);
+text(0.9977,1.6010,['(' num2str(maxY,3) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','HorizontalAlignment','right','Fontweight','bold','fontsize',fs);
+if (j==1), text(0.9777,1.6010,'[mV]','Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs); end
 else
 %title([plotFields{j} ' (' num2str(maxY,4) ')']);
-text(0.9977,1.4594,['(' num2str(maxY,4) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','HorizontalAlignment','right','Fontweight','bold','fontsize',fs);
+text(0.9977,1.6010,['(' num2str(maxY,4) ')'],'Units', 'Normalized', 'VerticalAlignment', 'Top','HorizontalAlignment','right','Fontweight','bold','fontsize',fs);
+if (j==1), text(0.9777,1.6010,'[mV]','Units', 'Normalized', 'VerticalAlignment', 'Top','horizontalalignment','right','Fontweight','bold','fontsize',fs); end
 end
 if j == length(SONICfields)
 xlabel('\Delta Q_m [nC/cm^2]'); 
@@ -280,7 +306,7 @@ set(gca,'ytick',[yt(1),yt(end)]);
 hold off;
 end
 set(findobj('type','axes'),'fontsize',fs,'fontweight','bold');
-cb = colorbar(surfQDeltaQm(1),'location','northoutside');
+cb = colorbar(surfQDeltaQm(1),'position',[0.9093 0.3010 0.0101 0.6192],'orientation','vertical');
 
 % ---- Effective params plot
 SONICfields = fieldnames(SONICtable);
@@ -394,3 +420,4 @@ set(gc,'position',get(gc,'position')+[0 0.04 0 0]);
 ylabel(rc,'P_{US} (\DeltaQ_m=0 nC/cm^2) [kPa]'); ylabel(gc,'\DeltaQ_m (P_{US} = 0 Pa) [nC/cm^2]'); ylabel(bc,'\DeltaQ_m (P_{US} = 50 kPa) [nC/cm^2]'); 
 axes = get(fig,'children'); tt = title(axes(25),['Effective parameters for ' modelName ' neuron']);
 set(tt,'position',get(tt,'position')+[0 5 0],'fontsize',20);
+end

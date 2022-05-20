@@ -4,10 +4,16 @@ rhol = 1028;			% Density surrounding medium (kg/m^3)
 Pa2I = @(Pa) Pa.^2/(2*rhol*c);
 I2Pa = @(I) sqrt(2*rhol*c*I);
 NICEpath = 'D:\users\ttarnaud\8. Piezoelectric solver\Parallellized functions for HPC calculations';
-NICEloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\NICE';
+NICEloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\NICE\WS4';
+%NICEloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\NICE\WS4PM1';
 SONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
-SONICloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\SONIC';
-addpath(genpath(pwd));
+%SONICloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\SONIC\Wicasim4\Testrun 3 (timeit,nloops=10)';
+SONICloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\SONIC\Wicasim4\Testrun 4 -- Review JNE (timeit,nloops=10,ProteinMode=1)';
+
+SECONICpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver';
+%SECONICloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\SECONIC\DeltaQm4_phiQ2_makima\Wicasim4\1. Testrun 1 - (ProteinMode = 0)';
+SECONICloadpath = 'D:\users\ttarnaud\8. Piezoelectric solver\8.4. Lemaire et al. (2018) - SONIC solver\measureRuntime\SECONIC\DeltaQm4_phiQ2_makima\Wicasim4\2. Testrun 2 - (ProteinMode = 1) - Review JNE';
+%addpath(genpath(pwd));
 
 Tsim = 0.1;   % (s)
 USpd = 0.1;   % (s)
@@ -17,15 +23,22 @@ USdc = 1; USprf = 0; % (-,Hz)
 aBLS = 32e-9;       % (m)
 modelnr = 1;
 fBLS = 0.75;
-proteinMode = 0; threshMode = 0; gateMultip = 1;
+proteinMode = 1; threshMode = 0; gateMultip = 1;
+NFS = 2;
 
 USPaRange = logspace(log10(30e3),log10(600000),5);  % Ultrasonic pressure (Pa)
 fBLSRange = linspace(0.5,0.95,5);
 
-SONICorNICE = 1; compiled = 0;
-noPlot = 0; noSim = 1;
+SONICorNICEorSECONIC = 1; compiled = 1;
+noPlot = 0; noSim = 1; 
+downsampleNICE = 1; useTimeitSONIC = 1;         % If useTimeitSONIC, make sure "tic,toc" in SONICrun/SONICrun_nanoMC is not used.
+combinedPlot = 0;
+
+%%
+modelNames = {'RS'};         % At the moment only RS simulated (paper 4)
+if ~(combinedPlot)
 %% --- SONIC 
-if SONICorNICE == 1 || SONICorNICE == 0
+if SONICorNICEorSECONIC == 1 || SONICorNICEorSECONIC == 0
 if ~compiled
 cd(SONICpath);
 end
@@ -35,7 +48,7 @@ load('SimTimeSONIC.mat');
 TTimeSONIC = SimTimeSONIC.pointN; TTimeSONICnanoMC = SimTimeSONIC.nanoMC;
 else
 p = gcp;
-nLoops = 100;
+nLoops = 10;
 TTimeSONICtemp = zeros(length(USPaRange),length(fBLSRange)); TTimeSONICnanoMCtemp = zeros(length(USPaRange),length(fBLSRange));
 TTimeSONICnanoMC = zeros(length(USPaRange),length(fBLSRange),nLoops);
 TTimeSONIC = zeros(length(USPaRange),length(fBLSRange),nLoops);
@@ -43,7 +56,12 @@ for ll = 1:nLoops
 for i = 1:length(USPaRange)
     for j = 1:length(fBLSRange)
 USPa = USPaRange(i);  fBLS = fBLSRange(j);
+if ~useTimeitSONIC
 futureTTimeSONIC(i,j) = parfeval(p,@SONICrun,1,num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),num2str(Pa2I(USPa)),'0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLS),num2str(proteinMode),num2str(threshMode),num2str(gateMultip)); %#ok<SAGROW>
+else
+timeSONICrun = @() SONICrun(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),num2str(Pa2I(USPa)),'0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLS),num2str(proteinMode),num2str(threshMode),num2str(gateMultip));
+futureTTimeSONIC(i,j) = parfeval(p,@timeit,1,timeSONICrun); %#ok<SAGROW>
+end
     end
 end
 for i = 1:length(USPaRange)
@@ -56,7 +74,12 @@ TTimeSONIC(:,:,ll) = TTimeSONICtemp;
 for i = 1:length(USPaRange)
     for j = 1:length(fBLSRange)
 USPa = USPaRange(i);  fBLS = fBLSRange(j);
+if ~useTimeitSONIC
 futureTTimeSONICnanoMC(i,j) = parfeval(p,@SONICrun_nanoMC,1,num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),num2str(Pa2I(USPa)),'0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLS),num2str(proteinMode),num2str(threshMode),num2str(gateMultip)); %#ok<SAGROW>
+else
+timeSONICrun_nanoMC = @() SONICrun_nanoMC(num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),num2str(Pa2I(USPa)),'0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLS),num2str(proteinMode),num2str(threshMode),num2str(gateMultip));
+futureTTimeSONICnanoMC(i,j) = parfeval(p,@timeit,1,timeSONICrun_nanoMC); %#ok<SAGROW>
+end
     end
 end
 for i = 1:length(USPaRange)
@@ -85,7 +108,7 @@ for i = 1:length(USPaRange)
     for j = 1:length(fBLSRange)
     USPa = USPaRange(end+1-i); fBLS = fBLSRange(j);
     h(i,j) = subplot(length(USPaRange)+3,2*length(fBLSRange)+2,(i)*(2*length(fBLSRange)+2)+j+1);
-    loadStr = [preStr{ii} 'Chargevt(RS)-Tsim=0.1-US(0,0.1,500000,1,0,'  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(3.2e-08)-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip)=(0,0,1).mat'];
+    loadStr = [preStr{ii} 'Chargevt(' modelNames{modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ','  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ').mat'];
     ll = load(loadStr); saveChargeSample = ll.saveChargeSample;
     switch ii
         case 1, plot(1e3*saveChargeSample(:,1),saveChargeSample(:,2));
@@ -135,7 +158,7 @@ end
 end
 end
 %% --- NICE
-if SONICorNICE == 2 || SONICorNICE == 0
+if SONICorNICEorSECONIC == 2 || SONICorNICEorSECONIC == 0
 if ~compiled
 cd(NICEpath);
 end
@@ -190,18 +213,26 @@ switch ii
     case 1, TTime = mean(TTimeNICE,3)/60^2; titleStr = 'NICE';              % [h]              
     case 2, TTime = mean(TTimeNICEnanoMC,3)/60^2; titleStr = 'NICE (MC)';   % [h]     
 end
-    
 figure('units','normalized','position',[0 0 1 1]); nwdth = 0.7; nhght = 0.7; % Normalized width and height
 hold on;
 for i = 1:length(USPaRange)
     for j = 1:length(fBLSRange)
     USPa = USPaRange(end+1-i); fBLS = fBLSRange(j);
     h(i,j) = subplot(length(USPaRange)+3,2*length(fBLSRange)+2,(i)*(2*length(fBLSRange)+2)+j+1);
-    loadStr = [preStr{ii} 'Chargevt(RS)-Tsim=0.1-US(0,0.1,500000,1,0,'  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(3.2e-08)-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip)=(0,0,1).mat'];
+    loadStr = [preStr{ii} 'Chargevt(' modelNames{modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ','  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ').mat'];
+    
     ll = load(loadStr); saveChargeSample = ll.saveChargeSample;
+    if ~(downsampleNICE)
     switch ii
         case 1,  plot(1e3*saveChargeSample(:,1),saveChargeSample(:,2));
         case 2,  plot(1e3*saveChargeSample(:,1),fBLS*saveChargeSample(:,2)+(1-fBLS)*saveChargeSample(:,3));
+    end
+    else
+    tsample = (0:0.025/USfreq:Tsim);
+    switch ii
+        case 1,  plot(1e3*tsample,interp1(saveChargeSample(:,1),saveChargeSample(:,2),tsample,'nearest'));
+        case 2,  plot(1e3*tsample,fBLS*interp1(saveChargeSample(:,1),saveChargeSample(:,2),tsample,'nearest')+(1-fBLS)*interp1(saveChargeSample(:,1),saveChargeSample(:,3),tsample,'nearest'));
+    end
     end
     if i ~= 5 || j ~= 1 
     set(gca,'visible','off');
@@ -222,7 +253,7 @@ colormap(cm_viridis(100));
 subindc = ((length(fBLSRange)+3:2*length(fBLSRange)+2)+(1:length(USPaRange))'*(2*length(fBLSRange)+2)); subindc = sort(subindc(:));
 subplot(length(USPaRange)+3,2*length(fBLSRange)+2,subindc); surf(fBLSRange,1e-3*USPaRange,TTime,'facecolor','interp','edgecolor','interp'); ylabel('P_{US} [kPa]'); xlabel('f_{BLS} [-]');
 ylim(1e-3*[USPaRange(1),USPaRange(end)]); xlim([fBLSRange(1),fBLSRange(end)]); view([0 90]);
-cb = colorbar('location','westoutside');
+cb = colorbar('position',[0.5911 0.8386 0.3141 0.0198],'orientation','horizontal');
 set(get(cb,'title'),'String','Simulation time [h]');
 
 supX = [fBLSRange(1)-fBLSRange(2)+fBLSRange(1),fBLSRange,fBLSRange(end)+fBLSRange(2)-fBLSRange(1)];
@@ -246,3 +277,306 @@ set(findobj('type','axes'),'fontsize',18,'fontweight','bold');
 end
 end
 end
+%% --- SECONIC 
+if SONICorNICEorSECONIC == 3 || SONICorNICEorSECONIC == 0
+if ~compiled
+cd(SECONICpath);
+end
+if noSim
+cd(SECONICloadpath);
+load('SimTimeSECONIC.mat');
+TTimeSECONICnanoMC = SimTimeSECONIC.nanoMC;
+else
+p = gcp;
+nLoops = 10;
+TTimeSECONICnanoMCtemp = zeros(length(USPaRange),length(fBLSRange));
+TTimeSECONICnanoMC = zeros(length(USPaRange),length(fBLSRange),nLoops);
+for ll = 1:nLoops
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+USPa = USPaRange(i);  fBLS = fBLSRange(j);
+TableVer = ['-v2xtra-p' num2str(i) '-up_DeltaQm4_phiQ2_makima'];
+futureTTimeSECONICnanoMC(i,j) = parfeval(p,@SONICrun_nanoMC_Qosc,1,num2str(Tsim),'2',num2str(USps),num2str(USpd),num2str(USfreq),num2str(USdc),num2str(USprf),num2str(Pa2I(USPa),50),'0','0','1','0','0','0',num2str(modelnr),'0',num2str(Pa2I(600e3)),'1',num2str(aBLS),num2str(fBLS),num2str(proteinMode),num2str(threshMode),num2str(gateMultip),num2str(NFS),TableVer); %#ok<SAGROW>
+    end
+end
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+[futInd,TTimeFut] = fetchNext(futureTTimeSECONICnanoMC); %#ok<SAGROW>
+TTimeSECONICnanoMCtemp(ind2sub([length(USPaRange),length(fBLSRange)],futInd)) = TTimeFut;
+    end
+end
+TTimeSECONICnanoMC(:,:,ll) = TTimeSECONICnanoMCtemp; 
+end
+SimTimeSECONIC.nanoMC = TTimeSECONICnanoMC;
+save('SimTimeSECONIC.mat','SimTimeSECONIC');
+end
+if ~noPlot
+% Plotting the results
+preStr = {'nanoMC-'}; %#ok<*UNRCH>
+TTime = mean(TTimeSECONICnanoMC,3); titleStr = 'SECONIC'; % [s]
+    
+figure('units','normalized','position',[0 0 1 1]); nwdth = 0.7; nhght = 0.7; % Normalized width and height
+hold on;
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    USPa = USPaRange(end+1-i); fBLS = fBLSRange(j);
+    h(i,j) = subplot(length(USPaRange)+3,2*length(fBLSRange)+2,(i)*(2*length(fBLSRange)+2)+j+1);
+    loadStr = [preStr{1} 'Qosc-Chargevt(' modelNames{modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ','  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip,NFS)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ',' num2str(NFS) ').mat'];
+
+    ll = load(loadStr); saveChargeSample = ll.saveChargeSample;
+    plot(1e3*saveChargeSample(:,1),fBLS*saveChargeSample(:,2)+(1-fBLS)*saveChargeSample(:,3));
+    if i ~= 5 || j ~= 1 
+    set(gca,'visible','off');
+    else
+    box off; xlabel('Time [ms]','position',[56.2500 -149.0909 -1]); ylabel('Charge [nC/cm^2]');
+    end
+    set(gca,'ylim',[-100 50]);
+    end
+    set(gcf,'color','w');
+end
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    set(h(i,j),'position',[(1-nwdth)/(2*length(fBLSRange)+2)/2 + (j)/(2*length(fBLSRange)+1), (1-nhght)/(length(USPaRange)+3)/2 + 1-(i+1)/(length(USPaRange)+3), nwdth/(2*length(fBLSRange)+2), nhght/(length(USPaRange)+3)]);
+    end
+end
+
+colormap(cm_viridis(100));
+subindc = ((length(fBLSRange)+3:2*length(fBLSRange)+2)+(1:length(USPaRange))'*(2*length(fBLSRange)+2)); subindc = sort(subindc(:));
+subplot(length(USPaRange)+3,2*length(fBLSRange)+2,subindc); surf(fBLSRange,1e-3*USPaRange,TTime/60,'facecolor','interp','edgecolor','interp'); ylabel('P_{US} [kPa]'); xlabel('f_{BLS} [-]');
+ylim(1e-3*[USPaRange(1),USPaRange(end)]); xlim([fBLSRange(1),fBLSRange(end)]); view([0 90]);
+cb = colorbar('position',[0.5911 0.8386 0.3141 0.0198],'orientation','horizontal');
+set(get(cb,'title'),'String','Simulation time [min]');
+
+supX = [fBLSRange(1)-fBLSRange(2)+fBLSRange(1),fBLSRange,fBLSRange(end)+fBLSRange(2)-fBLSRange(1)];
+supXlbl = num2cell(supX);
+supXlbl{1} = []; supXlbl{end} = [];
+supY = USPaRange;
+supY = [supY(1)/(supY(3)/supY(2)), supY, supY(end)*supY(3)/supY(2)];
+supYlbl = num2cell(1e-3*supY);
+supYlbl{1} = []; supYlbl{end} = [];
+supL = suplabel('f_{BLS} [-]','x',[0.0479 0.1972 0.5437 0.7513]);
+set(get(supL,'ylabel'),'String','P_{US} [kPa]'); set(get(supL,'ylabel'),'rotation',0,'position',[0.3853 14.0240]);
+set(supL,'yscale','lin','ytick',log(supY),'ylim',[log(supY(1)), log(supY(end))]);
+set(supL,'yticklabel',cellfun(@(X) num2str(X,3),supYlbl,'UniformOutput',false))
+set(supL,'visible','on');
+set(supL,'xscale','lin','xtick',supX,'xlim',[supX(1),supX(end)]);
+set(supL,'xticklabel',cellfun(@(X) num2str(X,3),supXlbl,'UniformOutput',false))
+
+ttl = text(681.7500,235.7273,titleStr,'fontsize',25,'fontweight','bold');
+
+set(findobj('type','axes'),'fontsize',18,'fontweight','bold');
+end
+end
+
+end
+%% Combined plot
+if (combinedPlot)
+USPaRange = USPaRange(2:end-1);
+    
+cd(SONICloadpath);
+load('SimTimeSONIC.mat');
+TTimeSONIC = SimTimeSONIC.pointN; TTimeSONICnanoMC = SimTimeSONIC.nanoMC;
+TTimeSONIC = TTimeSONIC(2:end-1,:,:); TTimeSONICnanoMC = TTimeSONICnanoMC(2:end-1,:,:);
+
+
+preStr = {'','nanoMC-'}; %#ok<*UNRCH>
+for ii = 1:2
+switch ii
+    case 1, TTime = mean(TTimeSONIC,3); titleStr = '  SONIC  ';         % [s]
+    case 2, TTime = mean(TTimeSONICnanoMC,3); titleStr = 'SONIC (MC)'; % [s]
+end
+    
+figure('units','normalized','position',[0 0 1 1]); nwdth = 0.7; nhght = 0.7; % Normalized width and height
+hold on;
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    USPa = USPaRange(end+1-i); fBLS = fBLSRange(j);
+    h(i,j) = subplot(length(USPaRange)+3,2*length(fBLSRange)+2,(i)*(2*length(fBLSRange)+2)+j+1);
+    loadStr = [preStr{ii} 'Chargevt(' modelNames{modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ','  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ').mat'];
+
+    ll = load(loadStr); saveChargeSample = ll.saveChargeSample;
+    switch ii
+        case 1, plot(1e3*saveChargeSample(:,1),saveChargeSample(:,2));
+        case 2, plot(1e3*saveChargeSample(:,1),fBLS*saveChargeSample(:,2)+(1-fBLS)*saveChargeSample(:,3));
+    end
+    if i ~= 5 || j ~= 1 
+    set(gca,'visible','off');
+    else
+    box off; xlabel('Time [ms]','position',[56.2500 -149.0909 -1]); ylabel('Charge [nC/cm^2]');
+    end
+    set(gca,'ylim',[-100 50]);
+    end
+    set(gcf,'color','w');
+end
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    set(h(i,j),'position',[(1-nwdth)/(2*length(fBLSRange)+2)/2 + (j)/(2*length(fBLSRange)+1), (1-nhght)/(length(USPaRange)+3)/2 + 1-(i+1)/(length(USPaRange)+3), nwdth/(2*length(fBLSRange)+2), nhght/(length(USPaRange)+3)]);
+    end
+end
+
+colormap(cm_viridis(100));
+subindc = ((length(fBLSRange)+3:2*length(fBLSRange)+2)+(1:length(USPaRange))'*(2*length(fBLSRange)+2)); subindc = sort(subindc(:));
+subplot(length(USPaRange)+3,2*length(fBLSRange)+2,subindc); surf(fBLSRange,1e-3*USPaRange,TTime,'facecolor','interp','edgecolor','interp'); ylabel('P_{US} [kPa]'); xlabel('f_{BLS} [-]');
+ylim(1e-3*[USPaRange(1),USPaRange(end)]); xlim([fBLSRange(1),fBLSRange(end)]); view([0 90]);
+cb = colorbar('position',[0.5911 0.8386 0.3141 0.0198],'orientation','horizontal');
+set(get(cb,'title'),'String','Simulation time [s]');
+
+supX = [fBLSRange(1)-fBLSRange(2)+fBLSRange(1),fBLSRange,fBLSRange(end)+fBLSRange(2)-fBLSRange(1)];
+supXlbl = num2cell(supX);
+supXlbl{1} = []; supXlbl{end} = [];
+supY = USPaRange;
+supY = [supY(1)/(supY(3)/supY(2)), supY, supY(end)*supY(3)/supY(2)];
+supYlbl = num2cell(1e-3*supY);
+supYlbl{1} = []; supYlbl{end} = [];
+supL = suplabel('f_{BLS} [-]','x',[0.0807 0.2393 0.5437 0.7012]);
+set(get(supL,'ylabel'),'String','P_{US} [kPa]'); set(get(supL,'ylabel'),'rotation',0,'position',[0.3853 14.0240]);
+set(supL,'yscale','lin','ytick',log(supY),'ylim',[log(supY(1)), log(supY(end))]);
+set(supL,'yticklabel',cellfun(@(X) num2str(X,3),supYlbl,'UniformOutput',false))
+set(supL,'visible','on');
+set(supL,'xscale','lin','xtick',supX,'xlim',[supX(1),supX(end)],'xcolor',[1 1 1]);
+set(supL,'xticklabel',cellfun(@(X) num2str(X,3),supXlbl,'UniformOutput',false))
+
+ttl = text(-120.9286,-360.4265,titleStr,'fontsize',25,'fontweight','bold','Rotation',90);
+
+set(findobj('type','axes'),'fontsize',18,'fontweight','bold');
+end
+
+cd(NICEloadpath);
+load('SimTimeNICE.mat');
+TTimeNICE = SimTimeNICE.pointN; TTimeNICEnanoMC = SimTimeNICE.nanoMC;
+TTimeNICE = TTimeNICE(2:end-1,:,:); TTimeNICEnanoMC = TTimeNICEnanoMC(2:end-1,:,:);
+
+preStr = {'','nanoMC-'}; %#ok<UNRCH>
+for ii = 1:2
+switch ii
+    case 1, TTime = mean(TTimeNICE,3); titleStr = '  NICE  ';         % [s]
+    case 2, TTime = mean(TTimeNICEnanoMC,3); titleStr = 'NICE (MC)'; % [s]
+end
+    
+figure('units','normalized','position',[0 0 1 1]); nwdth = 0.7; nhght = 0.7; % Normalized width and height
+hold on;
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    USPa = USPaRange(end+1-i); fBLS = fBLSRange(j);
+    h(i,j) = subplot(length(USPaRange)+3,2*length(fBLSRange)+2,(i)*(2*length(fBLSRange)+2)+j+1);
+    loadStr = [preStr{ii} 'Chargevt(' modelNames{modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ','  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ').mat'];
+    ll = load(loadStr); saveChargeSample = ll.saveChargeSample;
+    if ~(downsampleNICE)
+    switch ii
+        case 1,  plot(1e3*saveChargeSample(:,1),saveChargeSample(:,2));
+        case 2,  plot(1e3*saveChargeSample(:,1),fBLS*saveChargeSample(:,2)+(1-fBLS)*saveChargeSample(:,3));
+    end
+    else
+    tsample = (0:0.025/USfreq:Tsim);
+    switch ii
+        case 1,  plot(1e3*tsample,interp1(saveChargeSample(:,1),saveChargeSample(:,2),tsample,'nearest'));
+        case 2,  plot(1e3*tsample,fBLS*interp1(saveChargeSample(:,1),saveChargeSample(:,2),tsample,'nearest')+(1-fBLS)*interp1(saveChargeSample(:,1),saveChargeSample(:,3),tsample,'nearest'));
+    end
+    end
+    if i ~= 5 || j ~= 1 
+    set(gca,'visible','off');
+    else
+    box off; xlabel('Time [ms]','position',[56.2500 -149.0909 -1]); ylabel('Charge [nC/cm^2]');
+    end
+    set(gca,'ylim',[-100 50]);
+    end
+    set(gcf,'color','w');
+end
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    set(h(i,j),'position',[(1-nwdth)/(2*length(fBLSRange)+2)/2 + (j)/(2*length(fBLSRange)+1), (1-nhght)/(length(USPaRange)+3)/2 + 1-(i+1)/(length(USPaRange)+3), nwdth/(2*length(fBLSRange)+2), nhght/(length(USPaRange)+3)]);
+    end
+end
+
+colormap(cm_viridis(100));
+subindc = ((length(fBLSRange)+3:2*length(fBLSRange)+2)+(1:length(USPaRange))'*(2*length(fBLSRange)+2)); subindc = sort(subindc(:));
+subplot(length(USPaRange)+3,2*length(fBLSRange)+2,subindc); surf(fBLSRange,1e-3*USPaRange,TTime/60^2,'facecolor','interp','edgecolor','interp'); ylabel('P_{US} [kPa]'); xlabel('f_{BLS} [-]');
+ylim(1e-3*[USPaRange(1),USPaRange(end)]); xlim([fBLSRange(1),fBLSRange(end)]); view([0 90]);
+cb = colorbar('position',[0.5911 0.8386 0.3141 0.0198],'orientation','horizontal');
+set(get(cb,'title'),'String','Simulation time [h]');
+
+supX = [fBLSRange(1)-fBLSRange(2)+fBLSRange(1),fBLSRange,fBLSRange(end)+fBLSRange(2)-fBLSRange(1)];
+supXlbl = num2cell(supX);
+supXlbl{1} = []; supXlbl{end} = [];
+supY = USPaRange;
+supY = [supY(1)/(supY(3)/supY(2)), supY, supY(end)*supY(3)/supY(2)];
+supYlbl = num2cell(1e-3*supY);
+supYlbl{1} = []; supYlbl{end} = [];
+supL = suplabel('f_{BLS} [-]','x',[0.0807 0.2393 0.5437 0.7012]);
+set(get(supL,'ylabel'),'String','P_{US} [kPa]'); set(get(supL,'ylabel'),'rotation',0,'position',[0.3853 14.0240]);
+set(supL,'yscale','lin','ytick',log(supY),'ylim',[log(supY(1)), log(supY(end))]);
+set(supL,'yticklabel',cellfun(@(X) num2str(X,3),supYlbl,'UniformOutput',false))
+set(supL,'visible','on');
+set(supL,'xscale','lin','xtick',supX,'xlim',[supX(1),supX(end)],'xcolor',[1 1 1]);
+set(supL,'xticklabel',cellfun(@(X) num2str(X,3),supXlbl,'UniformOutput',false))
+
+ttl = text(-120.9286,-360.4265,titleStr,'fontsize',25,'fontweight','bold','Rotation',90);
+
+set(findobj('type','axes'),'fontsize',18,'fontweight','bold');
+end
+
+cd(SECONICloadpath);
+load('SimTimeSECONIC.mat');
+TTimeSECONICnanoMC = SimTimeSECONIC.nanoMC;
+TTimeSECONICnanoMC = TTimeSECONICnanoMC(2:end-1,:,:);
+
+preStr = {'','nanoMC-'}; %#ok<*UNRCH>
+TTime = mean(TTimeSECONICnanoMC,3); titleStr = 'SECONIC (MC)'; % [s]
+    
+figure('units','normalized','position',[0 0 1 1]); nwdth = 0.7; nhght = 0.7; % Normalized width and height
+hold on;
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    USPa = USPaRange(end+1-i); fBLS = fBLSRange(j);
+    h(i,j) = subplot(length(USPaRange)+3,2*length(fBLSRange)+2,(i)*(2*length(fBLSRange)+2)+j+1);
+    loadStr = [preStr{2} 'Qosc-Chargevt(' modelNames{modelnr} ')-Tsim=' num2str(Tsim) '-US(' num2str(USps) ',' num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ','  num2str(Pa2I(USPa)) ')-ES(0,0,1,0,0)-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')-(proteinMode,threshMode,gateMultip,NFS)=(' num2str(proteinMode) ',' num2str(threshMode) ',' num2str(gateMultip) ',' num2str(NFS) ').mat'];
+
+    ll = load(loadStr); saveChargeSample = ll.saveChargeSample;
+    plot(1e3*saveChargeSample(:,1),saveChargeSample(:,2));
+    plot(1e3*saveChargeSample(:,1),fBLS*saveChargeSample(:,2)+(1-fBLS)*saveChargeSample(:,3));
+    if i ~= 5 || j ~= 1 
+    set(gca,'visible','off');
+    else
+    box off; xlabel('Time [ms]','position',[56.2500 -149.0909 -1]); ylabel('Charge [nC/cm^2]');
+    end
+    set(gca,'ylim',[-100 50]);
+    set(gcf,'color','w');
+    end
+end
+for i = 1:length(USPaRange)
+    for j = 1:length(fBLSRange)
+    set(h(i,j),'position',[(1-nwdth)/(2*length(fBLSRange)+2)/2 + (j)/(2*length(fBLSRange)+1), (1-nhght)/(length(USPaRange)+3)/2 + 1-(i+1)/(length(USPaRange)+3), nwdth/(2*length(fBLSRange)+2), nhght/(length(USPaRange)+3)]);
+    end
+end
+
+colormap(cm_viridis(100));
+subindc = ((length(fBLSRange)+3:2*length(fBLSRange)+2)+(1:length(USPaRange))'*(2*length(fBLSRange)+2)); subindc = sort(subindc(:));
+subplot(length(USPaRange)+3,2*length(fBLSRange)+2,subindc); surf(fBLSRange,1e-3*USPaRange,TTime/(60),'facecolor','interp','edgecolor','interp'); ylabel('P_{US} [kPa]'); xlabel('f_{BLS} [-]');
+ylim(1e-3*[USPaRange(1),USPaRange(end)]); xlim([fBLSRange(1),fBLSRange(end)]); view([0 90]);
+cb = colorbar('position',[0.5911 0.8386 0.3141 0.0198],'orientation','horizontal');
+set(get(cb,'title'),'String','Simulation time [min]');
+
+supX = [fBLSRange(1)-fBLSRange(2)+fBLSRange(1),fBLSRange,fBLSRange(end)+fBLSRange(2)-fBLSRange(1)];
+supXlbl = num2cell(supX);
+supXlbl{1} = []; supXlbl{end} = [];
+supY = USPaRange;
+supY = [supY(1)/(supY(3)/supY(2)), supY, supY(end)*supY(3)/supY(2)];
+supYlbl = num2cell(1e-3*supY);
+supYlbl{1} = []; supYlbl{end} = [];
+supL = suplabel('f_{BLS} [-]','x',[0.0807 0.2393 0.5437 0.7012]);
+set(get(supL,'ylabel'),'String','P_{US} [kPa]'); set(get(supL,'ylabel'),'rotation',0,'position',[0.3853 14.0240]);
+set(supL,'yscale','lin','ytick',log(supY),'ylim',[log(supY(1)), log(supY(end))]);
+set(supL,'yticklabel',cellfun(@(X) num2str(X,3),supYlbl,'UniformOutput',false))
+set(supL,'visible','on');
+set(supL,'xscale','lin','xtick',supX,'xlim',[supX(1),supX(end)],'xcolor',[1 1 1]);
+set(supL,'xticklabel',cellfun(@(X) num2str(X,3),supXlbl,'UniformOutput',false))
+
+ttl = text(-120.9286,-360.4265,titleStr,'fontsize',25,'fontweight','bold','Rotation',90);
+
+set(findobj('type','axes'),'fontsize',18,'fontweight','bold');
+
+
+end
+
+
+

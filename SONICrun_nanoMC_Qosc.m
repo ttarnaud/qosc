@@ -11,8 +11,10 @@ error('Not enough input arguments');
 end
 end
 end
-proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1'; NFS = '2';
-if length(varargin) > 4 , disp('Warning: extra input parameters will be ignored'); end
+proteinMode = '0'; threshMode = '0'; modeStr = ''; gateMultip = '1'; NFS = '2'; tableVer = 'NAN';
+if length(varargin) > 5 , disp('Warning: extra input parameters will be ignored'); end
+if length(varargin) == 5,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3}; NFS = varargin{4}; tableVer = varargin{5};
+ modeStr = ['-(proteinMode,threshMode,gateMultip,NFS)=(' proteinMode ',' threshMode ',' gateMultip ',' NFS ')']; end
 if length(varargin) == 4,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3}; NFS = varargin{4};
  modeStr = ['-(proteinMode,threshMode,gateMultip,NFS)=(' proteinMode ',' threshMode ',' gateMultip ',' NFS ')']; end
 if length(varargin) == 3,  proteinMode = varargin{1}; threshMode = varargin{2}; gateMultip = varargin{3};
@@ -99,7 +101,7 @@ maxRate = 1e6;        % (1/s). This is the maximal allowed rate constant of (a,a
 % Computationally, very high maxRate will increase the stiffness of the set of equations, without important alterations in the solution set 
 % (e.g. for all practical purposes, gate opening from 0->1 in 1 us is equal to infinitely fast opening) 
 Tupdate = 50e-6;           % Update of fourier coefficients [s]
-fminTolFun = 1e-20; fminTolX = 1e-20;    % fminsearch tolerances (default is 1e-4 for tolfun and tolX). Should be stable w.r.t. starting point
+fminTolFun = 1e-4; fminTolX = 1e-4;    % fminsearch tolerances (default is 1e-4 for tolfun and tolX). Should be stable w.r.t. starting point
 
 HomogeneousInput = 1;      % If 1, SONICtables are input homogeneously to reduce memory requirements
 pretabulSONIC = 0;         % If 1, map SONIC-table to 1D every Tupdate and use nakeinterp1 (implies linear interpolation) 
@@ -110,8 +112,12 @@ sredpfaf = 1;              % Singleton reduction of pressure (p), frequency (f) 
 % (2 for linear and makima; 4 for spline, pchip and cubic). If only a single pressure, bilayer radius and frequency
 % are tabulated, the dimensions need singleton expansion (e.g. with sx4SONIC.m). With sredpfaf = 1 however, 
 % USPa, USfreq and aBLS will be treated as singleton dimensions and not interpolated, saving considerable memory).
-tableVersion = '-v2-up_DeltaQm4_phiQ2_makima'; 
+tableVersion = '-v2-up_DeltaQm8_phiQ2_spline'; 
 interpMethod = 'linear';
+
+if ~(strcmp(tableVer,'NAN'))
+    tableVersion = tableVer;        % Overwrite if input 
+end
 
 tic;
 % 1a. Multicompartmental parameters
@@ -862,13 +868,13 @@ APtimes = {APtimes1';APtimes2'};
 
 if MODE == 2
 SaveStr=['nanoMC-Qosc-APtimes(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
-        num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
+        num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(USipa) ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 save(SaveStr,'APtimes');
 
 SaveStr2=['nanoMC-Qosc-Chargevt(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
-        num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
+        num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(USipa) ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];
 saveChargeSample = [TvaluesY, 10^5*Y1(:,1),10^5*Y2(:,1)];
@@ -893,7 +899,7 @@ end
 if DISPLAY
 disp(' '); %#ok<*UNRCH>
 Checkpoint=['nanoMC-Qosc-CP(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ',' num2str(USpd) ',' ...
-        num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' USisppa ...
+        num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' num2str(USipa) ...
         ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa '):' num2str(SearchRange) '---aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr];
 disp(Checkpoint);   
@@ -904,7 +910,7 @@ end
 if MODE == 1
 SaveStr=['nanoMC-Qosc-Thresh(' modelName ')-Tsim=' num2str(Tsim) '-US(' num2str(USpstart) ','...
     num2str(USpd) ',' num2str(USfreq) ',' num2str(USdc) ',' num2str(USprf) ',' ...
-    USisppa ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
+    num2str(USipa) ')-ES(' num2str(ESpstart) ',' num2str(ESpd) ',' num2str(ESdc) ',' ...
         num2str(ESprf) ',' ESisppa ')-aBLS=(' num2str(aBLS) ')-fBLS=(' num2str(fBLS) ')' modeStr '.mat'];    
 save(SaveStr,'IIpa');
 end
